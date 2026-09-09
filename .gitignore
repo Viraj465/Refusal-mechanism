@@ -1,0 +1,24 @@
+# The prior project, cloned with its own .git. Referenced, never vendored.
+nnsj/
+env/
+# Downloaded source datasets — reproducible from build_dataset.py, large.
+refusal/data/_cache/
+
+# Model checkpoints. These live on the HF Hub / persistent volume, never in git.
+refusal/results/checkpoints/
+*.safetensors
+*.bin
+
+# Fitted directions and masks are large tensors; the JSON summaries in
+# refusal/results/ carry the numbers that go in the writeup.
+refusal/results/directions/*.pt
+refusal/results/masks/*.pt
+*.docx
+*.md
+*.pdf
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/

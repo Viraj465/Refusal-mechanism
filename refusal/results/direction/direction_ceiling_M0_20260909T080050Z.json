@@ -1,0 +1,16 @@
+{
+  "tag": "M0",
+  "checkpoint": "Qwen/Qwen2.5-3B-Instruct",
+  "mode": "ceiling",
+  "seed": 0,
+  "ablate_from_layer": "all",
+  "ceiling": {
+    "layer": 19,
+    "n_resamples": 200,
+    "mean": 0.9844962641596794,
+    "ci_low": 0.9732600450515747,
+    "ci_high": 0.991308867931366,
+    "half_size": 100
+  },
+  "_written_utc": "20260909T080050Z"
+}

@@ -1,0 +1,21 @@
+{
+  "model": "Qwen/Qwen2.5-3B-Instruct",
+  "n_prompts_scored": 2800,
+  "n_seen": {
+    "harmful": 800,
+    "harmless": 2000
+  },
+  "n_kept": {
+    "harmful": 752,
+    "harmless": 1957
+  },
+  "n_pairs": 752,
+  "splits": {
+    "train": 200,
+    "val": 50,
+    "test": 502
+  },
+  "judge_max_new_tokens": 64,
+  "seed": 0,
+  "_written_utc": "20260909T075236Z"
+}

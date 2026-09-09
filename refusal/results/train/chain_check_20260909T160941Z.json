@@ -1,0 +1,11 @@
+{
+  "m0": "Qwen/Qwen2.5-3B-Instruct",
+  "sft": "refusal/results/checkpoints/M_SFT",
+  "rl": "refusal/results/checkpoints/M_RL",
+  "||M_SFT - M0||": 7.597539612804695,
+  "||M_RL - M_SFT||": 6.896387751202123,
+  "||M_RL - M0||": 10.260377743741218,
+  "ratio_rl_sft_over_rl_m0": 0.672137802666075,
+  "chain_verified": true,
+  "_written_utc": "20260909T160941Z"
+}

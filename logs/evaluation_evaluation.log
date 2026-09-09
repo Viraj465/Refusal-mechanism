@@ -1,0 +1,140 @@
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation | Using separate evaluation dataset with 200 examples
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation | EVALUATING NEW TASK PERFORMANCE
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation | Samples to evaluate: 200
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation | 
+  Example 1:
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation |    Q: Below is a list of chemical reactants and reagents separated by ".":
+CN(C)C=O.O=P([O-])([O-])[O-].OB(O)c1ccccc1F.OCC(O)C(c1cccc(F)c1)n1cc(I)c2ccccc21.[K+].[K+].[K+]
+Which of the following SMILES formulas corresponds to the expected product of this chemical reaction?...
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation |    Expected: A
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation |    Predicted: A
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation |    Correct
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation | 
+  Example 2:
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation |    Q: Given the chemical reactants and reagents which are separated by "." as follows:
+CN(C)C=O.CN1CCNCC1.O.O=[N+]([O-])c1cc(Nc2ccccc2)c(F)cc1NCC1CCCCC1
+Which option correctly represents the product in SMILES notation?...
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation |    Expected: A
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation |    Predicted: A
+2026-09-09 08:40:55 | INFO     | evaluation.evaluation |    Correct
+2026-09-09 08:40:56 | INFO     | evaluation.evaluation | 
+  Example 3:
+2026-09-09 08:40:56 | INFO     | evaluation.evaluation |    Q: What is the molar weight (g/mol) of the molecule with the canonical SMILES representation 'C1=CN(C(=O)N=C1N)C2C(C(C(O2)COP(=O)(O)OC3C(OC(C3O)N4C=NC5=C(N=CN=C54)N)COP(=O)(O)OC6C(OC(C6O)N7C=CC(=O)NC7=O)COP(=O)(O)OC8C(OC(C8O)N9C=NC1=C9N=C(NC1=O)N)CO)O)O.C1=CN(C(=O)N=C1N)C2C(C(C(O2)COP(=O)(O)O)OP(=O)(O)OCC3C(C(C(O3)N4C=NC5=C(N=CN=C54)N)O)OP(=O)(O)OCC6C(C(C(O6)N7C=CC(=O)NC7=O)O)OP(=O)(O)OCC8C(C(C(O8)N9C=NC1=C9N=C(NC1=O)N)O)O)O'?...
+2026-09-09 08:40:56 | INFO     | evaluation.evaluation |    Expected: C
+2026-09-09 08:40:56 | INFO     | evaluation.evaluation |    Predicted: C
+2026-09-09 08:40:56 | INFO     | evaluation.evaluation |    Correct
+2026-09-09 08:41:21 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 08:41:21 | INFO     | evaluation.evaluation | NEW TASK EVALUATION RESULTS
+2026-09-09 08:41:21 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 08:41:21 | INFO     | evaluation.evaluation | Correct: 154/200
+2026-09-09 08:41:21 | INFO     | evaluation.evaluation | Accuracy: 77.00%
+2026-09-09 08:41:21 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 08:58:38 | INFO     | evaluation.evaluation | Using separate evaluation dataset with 200 examples
+2026-09-09 08:58:38 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 08:58:38 | INFO     | evaluation.evaluation | EVALUATING NEW TASK PERFORMANCE
+2026-09-09 08:58:38 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 08:58:38 | INFO     | evaluation.evaluation | Samples to evaluate: 200
+2026-09-09 08:58:38 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 08:58:40 | INFO     | evaluation.evaluation | 
+  Example 1:
+2026-09-09 08:58:40 | INFO     | evaluation.evaluation |    Q: Below is a list of chemical reactants and reagents separated by ".":
+CN(C)C=O.O=P([O-])([O-])[O-].OB(O)c1ccccc1F.OCC(O)C(c1cccc(F)c1)n1cc(I)c2ccccc21.[K+].[K+].[K+]
+Which of the following SMILES formulas corresponds to the expected product of this chemical reaction?...
+2026-09-09 08:58:40 | INFO     | evaluation.evaluation |    Expected: A
+2026-09-09 08:58:40 | INFO     | evaluation.evaluation |    Predicted: C
+The provided SMILES formula C) O=S(=O)(c1cccc(Cl)c1)c1cn(CC2CCCN2)c2ncccc12 corresponds to the expected product of the given chemical reaction. This can be determined by comparing the structure of the provided SMILES with the expected product based
+2026-09-09 08:58:40 | INFO     | evaluation.evaluation |      Incorrect
+2026-09-09 08:58:42 | INFO     | evaluation.evaluation | 
+  Example 2:
+2026-09-09 08:58:42 | INFO     | evaluation.evaluation |    Q: Given the chemical reactants and reagents which are separated by "." as follows:
+CN(C)C=O.CN1CCNCC1.O.O=[N+]([O-])c1cc(Nc2ccccc2)c(F)cc1NCC1CCCCC1
+Which option correctly represents the product in SMILES notation?...
+2026-09-09 08:58:42 | INFO     | evaluation.evaluation |    Expected: A
+2026-09-09 08:58:42 | INFO     | evaluation.evaluation |    Predicted: B
+The provided SMILES string for the reactant is quite complex, but it can be broken down to identify the correct product. The key elements include the amide group (CN(C)C=O), the amine group (ON[O-][N+]c1cc(Nc2ccccc2
+2026-09-09 08:58:42 | INFO     | evaluation.evaluation |      Incorrect
+2026-09-09 08:58:43 | INFO     | evaluation.evaluation | 
+  Example 3:
+2026-09-09 08:58:43 | INFO     | evaluation.evaluation |    Q: What is the molar weight (g/mol) of the molecule with the canonical SMILES representation 'C1=CN(C(=O)N=C1N)C2C(C(C(O2)COP(=O)(O)OC3C(OC(C3O)N4C=NC5=C(N=CN=C54)N)COP(=O)(O)OC6C(OC(C6O)N7C=CC(=O)NC7=O)COP(=O)(O)OC8C(OC(C8O)N9C=NC1=C9N=C(NC1=O)N)CO)O)O.C1=CN(C(=O)N=C1N)C2C(C(C(O2)COP(=O)(O)O)OP(=O)(O)OCC3C(C(C(O3)N4C=NC5=C(N=CN=C54)N)O)OP(=O)(O)OCC6C(C(C(O6)N7C=CC(=O)NC7=O)O)OP(=O)(O)OCC8C(C(C(O8)N9C=NC1=C9N=C(NC1=O)N)O)O)O'?...
+2026-09-09 08:58:43 | INFO     | evaluation.evaluation |    Expected: C
+2026-09-09 08:58:43 | INFO     | evaluation.evaluation |    Predicted: C) 2527.600
+
+The provided canonical SMILES string represents a complex organic molecule, likely a polymeric or cyclic compound. The exact molar weight can vary based on the specific structure, but the given options suggest that the correct molar weight is 2527.6
+2026-09-09 08:58:43 | INFO     | evaluation.evaluation |    Correct
+2026-09-09 09:02:52 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:02:52 | INFO     | evaluation.evaluation | NEW TASK EVALUATION RESULTS
+2026-09-09 09:02:52 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:02:52 | INFO     | evaluation.evaluation | Correct: 84/200
+2026-09-09 09:02:52 | INFO     | evaluation.evaluation | Accuracy: 42.00%
+2026-09-09 09:02:52 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation | Using separate evaluation dataset with 200 examples
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation | EVALUATING NEW TASK PERFORMANCE
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation | Samples to evaluate: 200
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation | 
+  Example 1:
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation |    Q: Below is a list of chemical reactants and reagents separated by ".":
+CN(C)C=O.O=P([O-])([O-])[O-].OB(O)c1ccccc1F.OCC(O)C(c1cccc(F)c1)n1cc(I)c2ccccc21.[K+].[K+].[K+]
+Which of the following SMILES formulas corresponds to the expected product of this chemical reaction?...
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation |    Expected: A
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation |    Predicted: A
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation |    Correct
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation | 
+  Example 2:
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation |    Q: Given the chemical reactants and reagents which are separated by "." as follows:
+CN(C)C=O.CN1CCNCC1.O.O=[N+]([O-])c1cc(Nc2ccccc2)c(F)cc1NCC1CCCCC1
+Which option correctly represents the product in SMILES notation?...
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation |    Expected: A
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation |    Predicted: A
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation |    Correct
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation | 
+  Example 3:
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation |    Q: What is the molar weight (g/mol) of the molecule with the canonical SMILES representation 'C1=CN(C(=O)N=C1N)C2C(C(C(O2)COP(=O)(O)OC3C(OC(C3O)N4C=NC5=C(N=CN=C54)N)COP(=O)(O)OC6C(OC(C6O)N7C=CC(=O)NC7=O)COP(=O)(O)OC8C(OC(C8O)N9C=NC1=C9N=C(NC1=O)N)CO)O)O.C1=CN(C(=O)N=C1N)C2C(C(C(O2)COP(=O)(O)O)OP(=O)(O)OCC3C(C(C(O3)N4C=NC5=C(N=CN=C54)N)O)OP(=O)(O)OCC6C(C(C(O6)N7C=CC(=O)NC7=O)O)OP(=O)(O)OCC8C(C(C(O8)N9C=NC1=C9N=C(NC1=O)N)O)O)O'?...
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation |    Expected: C
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation |    Predicted: C
+2026-09-09 09:06:03 | INFO     | evaluation.evaluation |    Correct
+2026-09-09 09:06:28 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:06:28 | INFO     | evaluation.evaluation | NEW TASK EVALUATION RESULTS
+2026-09-09 09:06:28 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:06:28 | INFO     | evaluation.evaluation | Correct: 154/200
+2026-09-09 09:06:28 | INFO     | evaluation.evaluation | Accuracy: 77.00%
+2026-09-09 09:06:28 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:54:19 | INFO     | evaluation.evaluation | Using separate evaluation dataset with 200 examples
+2026-09-09 09:54:19 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:54:19 | INFO     | evaluation.evaluation | EVALUATING NEW TASK PERFORMANCE
+2026-09-09 09:54:19 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:54:19 | INFO     | evaluation.evaluation | Samples to evaluate: 200
+2026-09-09 09:54:19 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation | 
+  Example 1:
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation |    Q: Below is a list of chemical reactants and reagents separated by ".":
+CN(C)C=O.O=P([O-])([O-])[O-].OB(O)c1ccccc1F.OCC(O)C(c1cccc(F)c1)n1cc(I)c2ccccc21.[K+].[K+].[K+]
+Which of the following SMILES formulas corresponds to the expected product of this chemical reaction?...
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation |    Expected: A
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation |    Predicted: A
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation |    Correct
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation | 
+  Example 2:
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation |    Q: Given the chemical reactants and reagents which are separated by "." as follows:
+CN(C)C=O.CN1CCNCC1.O.O=[N+]([O-])c1cc(Nc2ccccc2)c(F)cc1NCC1CCCCC1
+Which option correctly represents the product in SMILES notation?...
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation |    Expected: A
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation |    Predicted: A
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation |    Correct
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation | 
+  Example 3:
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation |    Q: What is the molar weight (g/mol) of the molecule with the canonical SMILES representation 'C1=CN(C(=O)N=C1N)C2C(C(C(O2)COP(=O)(O)OC3C(OC(C3O)N4C=NC5=C(N=CN=C54)N)COP(=O)(O)OC6C(OC(C6O)N7C=CC(=O)NC7=O)COP(=O)(O)OC8C(OC(C8O)N9C=NC1=C9N=C(NC1=O)N)CO)O)O.C1=CN(C(=O)N=C1N)C2C(C(C(O2)COP(=O)(O)O)OP(=O)(O)OCC3C(C(C(O3)N4C=NC5=C(N=CN=C54)N)O)OP(=O)(O)OCC6C(C(C(O6)N7C=CC(=O)NC7=O)O)OP(=O)(O)OCC8C(C(C(O8)N9C=NC1=C9N=C(NC1=O)N)O)O)O'?...
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation |    Expected: C
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation |    Predicted: A
+2026-09-09 09:54:20 | INFO     | evaluation.evaluation |      Incorrect
+2026-09-09 09:54:45 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:54:45 | INFO     | evaluation.evaluation | NEW TASK EVALUATION RESULTS
+2026-09-09 09:54:45 | INFO     | evaluation.evaluation | ======================================================================
+2026-09-09 09:54:45 | INFO     | evaluation.evaluation | Correct: 118/200
+2026-09-09 09:54:45 | INFO     | evaluation.evaluation | Accuracy: 59.00%
+2026-09-09 09:54:45 | INFO     | evaluation.evaluation | ======================================================================

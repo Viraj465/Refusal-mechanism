@@ -191,7 +191,7 @@ def run_rl(args) -> Path:
 
     cfg = GRPOConfig(
         output_dir=str(out_dir / "_trainer"),
-        loss_type="dr-grpo",          # Dr.GRPO: no std normalisation of advantages
+        loss_type="dr_grpo",          # Dr.GRPO: no std normalisation of advantages
         beta=0.0,                     # no explicit KL penalty (prior work's setting)
         num_generations=args.num_generations,
         max_completion_length=args.max_completion_length,
@@ -232,7 +232,7 @@ def run_rl(args) -> Path:
     save_json(
         {
             "stage": "rl", "init": args.init, "out": str(out_dir),
-            "loss_type": "dr-grpo", "beta": 0.0,
+            "loss_type": "dr_grpo", "beta": 0.0,
             "num_generations": args.num_generations,
             "max_completion_length": args.max_completion_length,
             "lr": args.lr, "n_prompts": len(train_ds),

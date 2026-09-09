@@ -1,0 +1,15 @@
+{
+  "stage": "rl",
+  "init": "refusal/results/checkpoints/M_SFT",
+  "out": "/teamspace/studios/this_studio/RefusalMechanism/Refusal-mechanism/refusal/results/checkpoints/M_RL",
+  "loss_type": "dr_grpo",
+  "beta": 0.0,
+  "num_generations": 16,
+  "max_completion_length": 256,
+  "lr": 2e-05,
+  "n_prompts": 600,
+  "rollout_reward_rate": 0.7252083333333333,
+  "science_nts": 59.0,
+  "seed": 0,
+  "_written_utc": "20260909T095445Z"
+}

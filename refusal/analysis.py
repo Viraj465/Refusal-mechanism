@@ -69,13 +69,33 @@ def latest(subdir: str, prefix: str) -> Optional[Dict]:
 
 
 def find_cosine(payload: Dict, other: str) -> Optional[float]:
-    """cos(this model's direction, `other`'s direction), each at its own L*."""
+    """cos(this model's direction, `other`'s direction), BOTH read at the same layer.
+
+    `direction.py` saves two cosines per pair:
+      `cos(X,Y)@own_LK`      — both directions taken at X's selected layer K
+      `cos(X@LK,Y@LJ)`       — each direction taken at its own selected layer
+
+    The same-layer one is what answers "how far did the direction rotate". The
+    cross-layer one confounds rotation with a shift in which layer the model
+    selected, and it collapses whenever two checkpoints pick different layers:
+    M_SFT and M0 both chose 19, so for M_SFT the two agree, but M_RL chose 21
+    and its cross-layer value (0.643) is not comparable to M_SFT's (0.914).
+    Prefer same-layer; `find_cosine_cross` reports the other one alongside.
+    """
     cos = payload.get("cosines", {})
     for key, val in cos.items():
-        if f",{other}@L" in key:      # both at their own selected layers
+        if f",{other})@own_L" in key:      # both at this model's selected layer
             return val
     for key, val in cos.items():
-        if f",{other})" in key:        # fallback: both at this model's layer
+        if f",{other}@L" in key:           # fallback: each at its own layer
+            return val
+    return None
+
+
+def find_cosine_cross(payload: Dict, other: str) -> Optional[float]:
+    """cos with each direction taken at its own selected layer (see above)."""
+    for key, val in (payload.get("cosines") or {}).items():
+        if f",{other}@L" in key:
             return val
     return None
 
@@ -217,8 +237,11 @@ def figure1(results: Dict, out_path: Path) -> Optional[Path]:
         for t in tags:
             c = beh[t]["behaviour"][key]
             vals.append(c["point"])
-            errs[0].append(c["point"] - c["low"])
-            errs[1].append(c["high"] - c["point"])
+            # clamp at 0: a Wilson interval at p = 1.0 can return an upper bound
+            # of 0.9999999999999999, one ulp below the point estimate, which
+            # matplotlib rejects as a negative error bar
+            errs[0].append(max(0.0, c["point"] - c["low"]))
+            errs[1].append(max(0.0, c["high"] - c["point"]))
         return vals, errs
 
     refusal, r_err = series("refusal_rate_harmful")
@@ -603,16 +626,29 @@ def write_summary(results: Dict, path: Path) -> Path:
             f"**{m0c['mean']:.3f}** [{m0c['ci_low']:.3f}, {m0c['ci_high']:.3f}]. "
             "Cosines are read against this, not against 1.0.\n"
         )
-    L += ["| Checkpoint | cos with dir_M0 | Transfer ratio | Verdict |", "|---|---|---|---|"]
+    L += ["| Checkpoint | L\\* | cos with dir_M0 (same layer) | cos (each at own L\\*) | "
+          "Transfer ratio | Verdict |",
+          "|---|---|---|---|---|---|"]
     for t in TAGS:
         if t not in dirn:
             continue
         cos = find_cosine(dirn[t], "M0")
+        cross = find_cosine_cross(dirn[t], "M0")
         tr = dirn[t].get("transfer", {})
+        ratio = tr.get("transfer_ratio")
         L.append(
-            f"| {t} | {'—' if cos is None else f'{cos:.3f}'} | "
-            f"{tr.get('transfer_ratio', float('nan')):.3f} | {tr.get('verdict', '—')} |"
+            f"| {t} | {dirn[t].get('selected_layer', '—')} | "
+            f"{'—' if cos is None else f'{cos:.3f}'} | "
+            f"{'—' if cross is None else f'{cross:.3f}'} | "
+            f"{'—' if ratio is None else f'{ratio:.3f}'} | {tr.get('verdict', '—')} |"
         )
+    L += ["",
+          "The same-layer column reads both directions at the checkpoint's own L\\*, and is "
+          "the rotation measure. The own-L\\* column takes each direction at the layer that "
+          "model selected, so it mixes rotation with a shift in the selected layer; it "
+          "differs from the same-layer value only when a checkpoint selects a different "
+          "layer from M0. Read the ceiling above against the same-layer column, and note "
+          "that the ceiling itself was bootstrapped at M0's layer."]
 
     if controls.get("iou_matrix"):
         L += ["", "## Head level (prereg §5.3)", "",

@@ -274,7 +274,7 @@ def run_chain_check(args) -> None:
     from transformers import AutoModelForCausalLM
 
     def state_dict(path):
-        m = AutoModelForCausalLM.from_pretrained(path, torch_dtype=torch.float32, device_map="cpu")
+        m = AutoModelForCausalLM.from_pretrained(path, torch_dtype=torch.bfloat16, device_map="cpu")
         sd = {k: v.detach() for k, v in m.state_dict().items()}
         del m
         return sd
@@ -288,7 +288,7 @@ def run_chain_check(args) -> None:
         total = 0.0
         for k in a:
             if k in b and a[k].shape == b[k].shape and a[k].is_floating_point():
-                total += (a[k] - b[k]).pow(2).sum().item()
+                total += (a[k].float() - b[k].float()).pow(2).sum().item()
         return total ** 0.5
 
     d_sft_m0 = l2(sd_sft, sd0)

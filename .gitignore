@@ -14,7 +14,7 @@ refusal/results/checkpoints/
 refusal/results/directions/*.pt
 refusal/results/masks/*.pt
 *.docx
-*.md
+
 *.pdf
 # Python
 __pycache__/

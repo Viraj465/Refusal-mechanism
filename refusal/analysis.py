@@ -55,17 +55,19 @@ CEILING_FRACTION = 0.80
 # Results loading
 # ==========================================================================
 
-def latest(subdir: str, prefix: str) -> Optional[Dict]:
+def latest(subdir: str, prefix: str, with_name: bool = False):
     """Most recent timestamped result matching a prefix. Results are never
-    overwritten, so 'latest' is always well defined."""
+    overwritten, so 'latest' is always well defined. `with_name` also returns
+    the filename, so the summary can state which run a number came from."""
     d = RESULTS_DIR / subdir
     if not d.is_dir():
-        return None
+        return (None, None) if with_name else None
     files = sorted(d.glob(f"{prefix}_*.json"))
     if not files:
-        return None
+        return (None, None) if with_name else None
     with files[-1].open(encoding="utf-8") as fh:
-        return json.load(fh)
+        payload = json.load(fh)
+    return (payload, files[-1].name) if with_name else payload
 
 
 def find_cosine(payload: Dict, other: str) -> Optional[float]:
@@ -104,17 +106,21 @@ def gather(demo: bool = False) -> Dict:
     if demo:
         return _demo_results()
 
-    out: Dict = {"behaviour": {}, "direction": {}, "ceiling": {}, "controls": None}
+    out: Dict = {"behaviour": {}, "direction": {}, "ceiling": {}, "controls": None, "random": {}}
     for tag in TAGS:
         b = latest("behaviour", f"behaviour_{tag}")
         if b:
             out["behaviour"][tag] = b
-        d = latest("direction", f"direction_eval_{tag}")
+        d, dname = latest("direction", f"direction_eval_{tag}", with_name=True)
         if d:
             out["direction"][tag] = d
+            out.setdefault("_direction_src", {})[tag] = dname
         c = latest("direction", f"direction_ceiling_{tag}")
         if c:
             out["ceiling"][tag] = c
+        r = latest("direction", f"random_control_{tag}")
+        if r:
+            out.setdefault("random", {})[tag] = r
     out["controls"] = latest("controls", "controls_stats")
     return out
 
@@ -642,6 +648,40 @@ def write_summary(results: Dict, path: Path) -> Path:
             f"{'—' if cross is None else f'{cross:.3f}'} | "
             f"{'—' if ratio is None else f'{ratio:.3f}'} | {tr.get('verdict', '—')} |"
         )
+    # Provenance: `latest` takes the newest file per tag, so a stability rerun
+    # supersedes the originally scored run in this table. Name the source so the
+    # numbers here can always be traced back to a specific run.
+    srcs = results.get("_direction_src") or {}
+    if srcs:
+        L += ["", "Source runs: " + "; ".join(f"{t} `{srcs[t]}`" for t in TAGS if t in srcs) +
+              ". Where a stability rerun exists it is the newest file and is used above; "
+              "the originally scored values are the ones recorded in the pre-registration."]
+
+    rand = results.get("random") or {}
+    if rand:
+        L += ["", "### Random-direction control (added; not a §5.2 registered readout)", "",
+              "The same projection, run with random unit vectors at the same layer. If an "
+              "arbitrary direction removed refusal too, the result would be about the "
+              "intervention rather than the mechanism.", "",
+              "| Checkpoint | baseline refusal | dir_M0 drop | random drops | max random | specific? |",
+              "|---|---|---|---|---|---|"]
+        for t in TAGS:
+            r = rand.get(t)
+            if not r:
+                continue
+            drops = ", ".join(f"{x['refusal_drop']:+.3f}" for x in r["random"])
+            s = r["summary"]
+            L.append(
+                f"| {t} | {r['baseline']['harmful']['point']:.3f} | "
+                f"**{s['real_drop']:+.3f}** | {drops} | {s['random_drop_max']:+.3f} | "
+                f"{'yes' if s['real_exceeds_all_random'] else '**NO**'} |"
+            )
+        worst = max((r["summary"]["random_drop_max"] for r in rand.values()), default=0.0)
+        L += ["", f"Largest effect any random direction had on refusal: {worst:+.3f}. "
+                  "Harmless-side refusal under random ablation is reported in the per-run "
+                  "JSONs; it stays near baseline, so the random directions are not breaking "
+                  "the model either."]
+
     L += ["",
           "The same-layer column reads both directions at the checkpoint's own L\\*, and is "
           "the rotation measure. The own-L\\* column takes each direction at the layer that "

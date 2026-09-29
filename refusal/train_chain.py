@@ -39,14 +39,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from common import (  # noqa: E402
     M0_NAME,
-    RESULTS_DIR,
+    RESULTS_ROOT,
     load_model_and_tokenizer,
     rlrazor_path,
     save_json,
     set_seed,
 )
 
-CKPT_DIR = RESULTS_DIR / "checkpoints"
+CKPT_DIR = RESULTS_ROOT / "checkpoints"  # profile-independent (D16)
 
 
 # --------------------------------------------------------------------------

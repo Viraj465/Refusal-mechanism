@@ -209,7 +209,9 @@ Do not lead with "RL restores refusal". Lead with the dissociation.
 
 ## Infrastructure disclosure *(facts — one paragraph, do not overclaim)*
 
-Reused from arXiv:2605.28860: the o_proj-input patching site,
+Reused from arXiv:2605.28860: the o_proj-input patching site (used only by the
+head-level DBM code, which was not run, D6; the refusal direction is read from and
+ablated in the residual stream, not at the o_proj input),
 `check_answer_correctness`, `UnifiedDatasetInterface`, and `evaluate_new_task`.
 New for this project: the refusal dataset, the direction analysis, the training
 chain, the random-direction control, and all analysis. **Checkpoints were trained

@@ -46,6 +46,7 @@ from common import (  # noqa: E402
     RESULTS_DIR,
     is_refusal,
     load_model_and_tokenizer,
+    m0_condition,
     save_json,
     set_seed,
     wilson_ci,
@@ -129,11 +130,13 @@ def _residual_write_modules(model, from_layer: int = 0):
 
 
 @contextmanager
-def directional_ablation(model, direction, from_layer: int = 0):
+def directional_ablation(model, direction, from_layer: int = 0, alpha: float = 1.0):
     """Project the unit direction out of every residual-stream write.
 
-    a <- a - r_hat (r_hat . a),  applied at all positions of every write.
+    a <- a - alpha * r_hat (r_hat . a),  applied at all positions of every write.
     This is Arditi's directional ablation, not a single-site intervention.
+    alpha = 1 (the default, and the registered readout) removes the component
+    entirely; 0 < alpha < 1 removes a fraction of it, for graded dose curves.
     """
     import torch
 
@@ -143,8 +146,8 @@ def directional_ablation(model, direction, from_layer: int = 0):
     def hook(_module, _args, output):
         if isinstance(output, tuple):
             head, rest = output[0], output[1:]
-            return (head - (head @ r).unsqueeze(-1) * r,) + rest
-        return output - (output @ r).unsqueeze(-1) * r
+            return (head - alpha * (head @ r).unsqueeze(-1) * r,) + rest
+        return output - alpha * (output @ r).unsqueeze(-1) * r
 
     handles = [m.register_forward_hook(hook) for m in _residual_write_modules(model, from_layer)]
     try:
@@ -182,6 +185,12 @@ def directional_addition(model, direction, layer: int, coefficient: float = 1.0)
 # ==========================================================================
 
 def _refusal_rate(model, tokenizer, chats: List[str], batch_size: int, max_new_tokens: int) -> Dict:
+    refusals = _refusal_flags(model, tokenizer, chats, batch_size, max_new_tokens)
+    return wilson_ci(sum(refusals), len(refusals))
+
+
+def _refusal_flags(model, tokenizer, chats: List[str], batch_size: int, max_new_tokens: int) -> List[bool]:
+    """Per-prompt judge verdicts (greedy decode + frozen substring judge)."""
     import torch
 
     refusals = []
@@ -205,7 +214,7 @@ def _refusal_rate(model, tokenizer, chats: List[str], batch_size: int, max_new_t
             )
         texts = tokenizer.batch_decode(out[:, enc["input_ids"].shape[1]:], skip_special_tokens=True)
         refusals += [is_refusal(t) for t in texts]
-    return wilson_ci(sum(refusals), len(refusals))
+    return refusals
 
 
 def measure(
@@ -399,6 +408,8 @@ def main() -> None:
     ap.add_argument("--max-new-tokens", type=int, default=64)
     ap.add_argument("--n-resamples", type=int, default=200)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--m0-condition", action="store_true",
+                    help="eval on test pairs whose harmful prompt M0 refused (v2 test is unfiltered, D16)")
     args = ap.parse_args()
 
     set_seed(args.seed)
@@ -461,6 +472,9 @@ def main() -> None:
 
     # ---------------- eval (test split) ----------------
     test = load_pairs("test")
+    if args.m0_condition:
+        test = m0_condition(test, "harmful")
+    payload["m0_conditioned"] = args.m0_condition
     own = load_directions(args.tag)
     layer = own["selected_layer"]
     own_unit = own["unit"][layer]

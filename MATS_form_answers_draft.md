@@ -39,7 +39,7 @@ Data. AdvBench + HarmBench + MaliciousInstruct harmful prompts, each paired to a
 
 What I measure.
 - Refusal: JailbreakBench substring judge, greedy, 64 tokens, frozen before scoring. Wilson CIs; exact paired McNemar on the same 502 prompts.
-- Refusal direction: diff-in-means (harmful − harmless) at the o_proj input, fit on train, layer chosen on val as the earliest that fully removes refusal (L19 for M0 and M_SFT, L21 for M_RL).
+- Refusal direction: diff-in-means (harmful − harmless) of residual-stream activations (`hidden_states[L]`, the output of decoder block L−1) at the last instruction token, fit on train, layer chosen on val as the earliest that fully removes refusal (L19 for M0 and M_SFT, L21 for M_RL).
 - Representational retention: cos(dir_M0, dir_X) at a matched layer, read against a split-half bootstrap ceiling rather than against 1.0.
 - Causal retention: transfer ratio = refusal drop from ablating dir_M0 inside checkpoint X ÷ drop from X's own direction. ≥ 0.8 preserved, < 0.5 moved.
 - Controls: three random unit directions through the same projection; batch-size rerun; forward KL from M0.
@@ -127,5 +127,5 @@ I applied to MATS once before and got through the first round but not further. T
 Candidates:
 - The write-up was pre-registered before any data was downloaded (commit 49ebad6); D1–D7 were written before any model saw a refusal prompt, D8–D14 as data came in, none after test data was scored. The deviations log is in the repo.
 - Losing the direction tensors mid-project forced a refit on different hardware, which recovered identical selected layers and separation profiles to a few tenths of a percent. Unplanned, but it's the strongest reproducibility check in the project.
-- Infrastructure disclosure: reused from arXiv:2605.28860 the o_proj-input patching site, the correctness checker, the dataset interface and the new-task evaluator; everything refusal-specific is new.
+- Infrastructure disclosure: reused from arXiv:2605.28860 the o_proj-input patching site (used only by the head-level DBM code, which was not run; the direction analysis reads and edits the residual stream), the correctness checker, the dataset interface and the new-task evaluator; everything refusal-specific is new.
 - [Hours: total and split setup / attended training / analysis / writing, from Toggl.]

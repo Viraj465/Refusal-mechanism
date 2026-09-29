@@ -14,6 +14,9 @@ refusal/results/checkpoints/
 # refusal/results/ carry the numbers that go in the writeup.
 refusal/results/directions/*.pt
 refusal/results/masks/*.pt
+# same, for non-v1 data profiles (results/v2/, ...; prereg D16)
+refusal/results/*/directions/*.pt
+refusal/results/*/masks/*.pt
 *.docx
 
 *.pdf
@@ -23,3 +26,6 @@ __pycache__/
 .venv/
 venv/
 .ipynb_checkpoints/
+
+# resumable-session markers (refusal/run_session.sh)
+refusal/results/.session_done/

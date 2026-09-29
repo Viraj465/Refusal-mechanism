@@ -358,3 +358,68 @@ Three checks run after D12/D13. The first is a baseline the admissions document 
 *New matched-layer cosine.* That rerun also produced **cos(dir_SFT, dir_RL) @ L19 = 0.9871**, which lies inside the M0 split-half ceiling CI [0.9733, 0.9913]. At a common layer the two fine-tuned models carry very nearly the same refusal direction: RL moved it hardly at all relative to SFT. The corresponding cross-layer figure, cos(M_SFT@L19, M_RL@L21) = 0.66, is again the artefact D13 describes and is not reported.
 
 *What is still missing, stated plainly.* cos(dir_M0, dir_RL) at a **common** layer 19 has not been measured; the recorded 0.933 is at layer 21. With cos(M0, SFT) = 0.914 and cos(SFT, RL) = 0.987 the triangle inequality on angles bounds it to roughly [0.84, 0.97], which brackets M_SFT's value but does not resolve it. Two cheap routes exist: recover `refusal/results/directions/*.pt` (≈1.8 MB, CPU only), or re-run `direction.py --mode eval --tag M0`, whose own L\* is 19 and which now globs `M_RL.pt`. Until one is done, the M0→M_RL cosine is reported at layer 21 with that limitation stated.
+
+**D15 — 2026-09-28 — Readout-sensitivity experiments registered before they are run. Written after test-split data was scored (D11–D14); no new data has been observed.**
+An external review (`LW_REVIEW.md`) argues that the headline dissociation of D11/D12 ("the direction rotated, cos 0.914 against a 0.9845 ceiling, yet the transfer ratio is 1.00") may be a property of the readout rather than of the models. The registered ablation projects a direction out of every residual write at every layer and position, and its val trace is close to a step function (D13: every layer 19–31 gives the full drop). A step function cannot show whether a 0.914 rotation matters. The in-project hint that it saturates is D12's retracted cross-layer cosine: dir_M0@L19 removes all of M_RL's refusal although cos(M_RL@L21, M0@L19) = 0.643. D14's random control only shows that *unrelated* directions (cos ≈ 0) fail; it says nothing about *nearby* ones. This entry fixes the design, the readouts and the decision rules before any of it runs, so the result cannot choose its own interpretation.
+
+*Correction to the header of §9, recorded here because the log is append-only.* The header says "No entry in this log was written after test-split data was scored." That was true up to D10. D11–D14 were written after test data was scored, and each says what had been observed; D15 is too. The header sentence is withdrawn.
+
+*Status.* Exploratory calibration, not a registered §5 readout. No threshold, hypothesis or registered readout changes. The test split is used for measurement only; every grid, layer, subset and threshold below is fixed here and none is chosen by looking at test results.
+
+*Shared protocol (`refusal/sensitivity.py`).*
+- Prompts: a seeded uniform subset of **200 test pairs** (seed 0). The same pair ids are used for every checkpoint, so curves are paired over prompts. Harmful side for ablation, harmless side for addition.
+- Readout 1: the frozen substring judge on greedy 64-token generations (as registered).
+- Readout 2 (new, graded): **first-token refusal log-odds** at the last instruction token, log p(opener) − log(1 − p(opener)), with openers "I" and "As" looked up in the tokenizer (Arditi et al.'s refusal score). It needs no generation and does not saturate at 0/1. Readout 1 is primary for comparison with the registered numbers. Readout 2 is primary for grading.
+- Uncertainty: percentile bootstrap over prompts (1000 resamples, seed 0). Cross-checkpoint comparisons use a paired bootstrap on the shared prompt ids.
+- Directions: the original `refusal/results/directions/*.pt` if recovered. Otherwise they are refit with `direction.py --mode fit`, and every number is reported against the refit c_obs, with the substitution stated. D12 already showed refits agree across hardware.
+
+*E1 — Rotation dose-response (priority; `refusal/rotation_dose.py`).* In M0 and in M_SFT, with d_own = the model's own unit direction at L19, ablate v = c·d_own + √(1−c²)·u through the registered all-writes projection, for c ∈ {1, .95, .9, .85, .8, .7, .6, .5, .3} plus the measured c_obs (≈ 0.914). u is (a) a random unit vector orthogonal to d_own, 5 seeds (0–4), the same u across the grid per seed; and (b) the **real axis**: the unit vector in span(d_own, d_other) orthogonal to d_own, where d_other = dir_M0 for M_SFT and dir_SFT for M0. At c_obs, (b) reproduces the registered transfer condition. Below c_obs it extrapolates the rotation fine-tuning actually made. Random u is not a model of that rotation; (b) is included for that reason. Per condition: ratio(c) = drop(v)/drop(d_own). For reference, the analytic residual of a pure d_own component after projecting out v is 1 − c² (0.165 at 0.914).
+Decision rule, on the mean-over-seeds random-axis ratio at c_obs, with its prompt-bootstrap 95% CI, Readout 1:
+- CI lower bound ≥ 0.8 → **undetectable**. A random rotation of the observed size also passes as "causally preserved", so the registered readout cannot see a rotation this large. **The "rotated but not weakened" dissociation is withdrawn as a finding.** The post leads with the calibration curve and c\* (the cosine at which the mean ratio crosses 0.8).
+- CI upper bound < 0.8 → **detectable**. The readout would have flagged a random rotation of this size, so the observed ratio of 1.0 means the actual rotation was along a causally inert axis. The dissociation stands, and the real-axis curve says how far that holds.
+- Otherwise **ambiguous**, reported as such and not rounded.
+The seed range (min/max over u) is reported beside the CI. Readout 2 gets the same rule and is reported beside Readout 1. If the two readouts disagree, both are reported and the disagreement is the result.
+
+*E2a — Addition-coefficient sweep (`refusal/addition_sweep.py`).* Add c·raw(dir_M0@L19) at hidden_states[19] (registered hook), c ∈ {0, .25, .5, .75, 1, 1.25, 1.5, 2}, on harmless prompts, in M0, M_SFT and M_RL. The own direction at L19 is swept too (`--also-own`). This supplies the M0 baseline the registered c = 1 numbers (0.462 / 0.496) lack. Summary: c50, the coefficient at which the judged harmless refusal rate reaches 0.5 (Readout 1), and c0, where the mean log-odds crosses 0 (Readout 2). Rule: the paired-bootstrap 95% CI of c(X) − c(M0) on the dir_M0 curves either contains 0 (**indistinguishable**) or does not (**needs more / needs less** push, reported with sign).
+
+*E2b — Graded ablation (`refusal/graded_ablation.py`).* Two variants, each with dir_M0@L19 and the model's own direction @L19, in M0, M_SFT and M_RL. M_RL's own direction is taken at 19, not at its tie-break L\* of 21 (D13).
+- `alpha`: a ← a − α·r(r·a) on every write, α ∈ {.2, .4, .5, .6, .7, .8, .9, .95, 1}. α = 1 is the registered intervention (`direction.directional_ablation` gains an `alpha` argument defaulting to 1.0; a CPU test asserts the default is unchanged).
+- `single`: project r out of the residual stream at hidden_states[19] only, same α grid. Later blocks may write r back.
+Curves are normalised by the own direction's α = 1 drop in the same variant. Summary: α50 per direction, and the **graded transfer ratio** AUC(dir_M0)/AUC(own) with a prompt-bootstrap CI. The §5.2 thresholds are applied to the CI, not to the point estimate: lower bound ≥ 0.8 → preserved; upper bound < 0.5 → moved; else ambiguous. If the bootstrap CI of the own direction's α = 1 drop includes 0 (likely for `single`), that variant is reported as **uninformative** for that checkpoint rather than as a ratio.
+
+*E3 — Matched-layer cosine (`refusal/matched_cosine.py`, CPU).* cos(M0, M_RL) at L19, closing the gap D13/D14 left open. D14's triangle bound was [0.84, 0.97]. The script also reports the all-layer cosine profile for every pair, and the cosine between the components of dir_SFT and dir_RL orthogonal to dir_M0: did RL continue SFT's rotation, or rotate elsewhere? This result is purely descriptive; no rule depends on it.
+
+*Not done, stated so it is not implied:* the perturbation null (a second SFT seed, plus SFT on a non-chemistry benign set at matched weight distance) and a StrongREJECT/HarmBench-classifier judge (review items 4–5). Until the perturbation null exists, the 2-point refusal drop (D11, p = 0.013) is reported without a fine-tuning-noise baseline.
+
+*Code verification.* Every new component has a CPU smoke test in `refusal/smoke_test.py`, run on a random-init 4-layer Qwen2 with a character tokenizer: exact rotation cosines; the real axis passes through d_other; α = 1 leaves hidden_states[0..n−1] orthogonal to r; α = 0 is the identity; single-layer indexing (hidden_states[L] projected, [L−1] untouched); the refusal score is invariant to left padding; and the verdict logic of every rule above reaches each outcome. One incidental finding: under transformers v5, `output_hidden_states` records a decoder block's output *before* forward hooks on that block modify it. Single-layer ablation is therefore verified at the next block's input, not via `hidden_states`. None of the registered numbers depended on reading `hidden_states` under a block-output hook.
+
+*Writeup correction.* The draft described the direction as "diff-in-means at the o_proj input". The code (`direction.last_token_residuals`) reads residual-stream `hidden_states` at the last instruction token and ablates residual writes. The text is corrected. D4's "o_proj-input patching site" refers only to the head-level DBM code, which was never run (D6); the disclosure lines now say so.
+
+*Budget.* Estimated ≈ 2.5–3 GPU-h on one L40S for E1 (~1.1 h, 112 conditions), E2a (~0.4 h) and E2b (~1 h). E3 is CPU-only. Not yet run.
+
+**D16 — 2026-09-29 — Refusal data replaced going forward by a disjoint v2 set; v1 frozen. Written after test-split data was scored (D11–D14). No v2 data has been scored by any model.**
+The author decided to move the project to a second refusal dataset. The v1 data (AdvBench / HarmBench / MaliciousInstruct vs Alpaca, D2–D3, D10) is not deleted or modified: every number in D9–D14 was scored on it and stays the registered record. "Replace" therefore means *new runs default to v2*. It does not mean the v1 results are superseded.
+
+*Mechanism.* `REFUSAL_DATA_PROFILE` (default `v2`; `v1` restores the original). v1 data stays in `refusal/data/` and its results in `refusal/results/`. v2 uses `refusal/data/v2/` and `refusal/results/v2/`, so no v2 run can overwrite a v1 file. A CPU smoke test enforces the separation. Checkpoints stay in `refusal/results/checkpoints/` for both profiles: the SFT/RL chain never sees refusal data and is **not retrained**.
+
+*v2 sources* (raw GitHub releases by each benchmark's authors; snapshot pinned in `refusal/data/v2/sources.jsonl`, fetched 2026-09-29):
+- Harmful, 1,142 prompts:
+  - StrongREJECT: 276 of 313. Rows whose own `source` is AdvBench or MaliciousInstruct are dropped, so v2 is disjoint from v1 by construction.
+  - Do-Not-Answer: 666, from the three harm-refusal risk areas (Malicious Uses, Information Hazards, Discrimination/Toxicity). "Human-Chatbot Interaction Harms" and "Misinformation Harms" are excluded, because arXiv:2602.02132 finds that different non-compliance categories have distinct directions, and mixing them would change what "the refusal direction" means.
+  - XSTest unsafe contrast prompts: 200.
+- Harmless: 3,000 seeded Alpaca no-input instructions, excluding the 2,000 used in v1.
+- Over-refusal set (new, not paired): the 250 XSTest safe prompts, which look unsafe but are not.
+- All exact-text duplicates across sources, and every v1 prompt, are removed.
+
+*v2 split design: changed to remove a known bias.* In v1 every split, test included, kept only harmful prompts M0 refused. The external review (`LW_REVIEW.md`) noted that this makes the test set regress under any perturbation, so the D11 refusal drop has no clean null. In v2, each label's pool is divided **before any model is run** into a fit pool (40%) and a test pool (60%), seed 0.
+- Only the fit pool is M0-filtered. It supplies train 200 / val 50 exactly as §3 registers.
+- The **test pool is paired unfiltered**, and each pair records `harmful_m0_refused` / `harmless_m0_refused`.
+- Registered §5 readouts on v2 test are reported both unconditioned and conditioned on M0's verdict. `behaviour.py` keeps per-prompt verdicts, so its conditioned rates are computed from the saved records. `direction.py --mode eval` and `random_control.py` take `--m0-condition`.
+- The D15 sensitivity scripts condition by default: ablation readouts use harmful prompts M0 refused, and addition uses harmless prompts M0 complied with. `--no-m0-condition` reports the unconditioned version.
+- If the fit pool yields fewer than 250 filtered pairs, the build stops rather than shrinking the splits silently.
+
+*New readout (v2).* `behaviour.py` reports the over-refusal rate on the XSTest safe set, overall and per XSTest type. D9/D11 found the Alpaca compliance guard blind to this.
+
+*How v1 and v2 are reported.* The published claim (cos 0.914, transfer ratio 1.004) was measured on v1. v2 is reported as a **replication on disjoint data**, never as a correction of v1. D15's E1 decision rule is applied to each profile separately, and both results are shown. If v1 and v2 disagree, the disagreement is reported, and neither is chosen after the fact.
+
+*Not yet done.* `--build` needs the Qwen tokenizer (HF access). `--filter` needs the GPU, roughly 2,400 prompts × 64 greedy tokens, about 10–15 min on the L40S. Every v2 readout (fit, ceiling, eval, behaviour, random control, E1–E3) still has to be run on v2, and no v2 number exists.

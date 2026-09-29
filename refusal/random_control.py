@@ -34,7 +34,7 @@ from typing import Dict, List
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent / "data"))
 
-from common import load_model_and_tokenizer, save_json, set_seed  # noqa: E402
+from common import load_model_and_tokenizer, m0_condition, save_json, set_seed  # noqa: E402
 from direction import (  # noqa: E402
     _refusal_rate,
     directional_ablation,
@@ -55,12 +55,16 @@ def main() -> None:
     ap.add_argument("--batch-size", type=int, default=16)
     ap.add_argument("--max-new-tokens", type=int, default=64)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--m0-condition", action="store_true",
+                    help="use pairs whose harmful prompt M0 refused (v2 test is unfiltered, D16)")
     args = ap.parse_args()
 
     set_seed(args.seed)
     from build_dataset import load_pairs  # noqa: E402
 
     pairs = load_pairs(args.split)
+    if args.m0_condition:
+        pairs = m0_condition(pairs, "harmful")
     harmful = [p["harmful_chat"] for p in pairs]
     harmless = [p["harmless_chat"] for p in pairs]
 
@@ -135,6 +139,7 @@ def main() -> None:
         "donor": donor_tag,
         "layer": layer,
         "split": args.split,
+        "m0_conditioned": args.m0_condition,
         "n_pairs": len(pairs),
         "d_model": d_model,
         "seed": args.seed,

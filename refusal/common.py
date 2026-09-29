@@ -27,7 +27,22 @@ from typing import Any, Dict, Iterable, List, Optional
 REFUSAL_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = REFUSAL_DIR.parent
 DATA_DIR = REFUSAL_DIR / "data"
-RESULTS_DIR = REFUSAL_DIR / "results"
+# Unscoped root: model checkpoints live here whatever the data profile, since
+# the science SFT/RL chain never sees refusal data.
+RESULTS_ROOT = REFUSAL_DIR / "results"
+
+# Refusal-data profile (prereg.md §9 D16).
+#   v1: AdvBench / HarmBench / MaliciousInstruct vs Alpaca. Frozen; every number
+#       in D9-D14 was scored on it. Data in data/, results in results/.
+#   v2: StrongREJECT / Do-Not-Answer / XSTest-unsafe vs Alpaca, disjoint from
+#       v1, with an M0-unfiltered test split. Data in data/v2/, results in
+#       results/v2/, so the two can never overwrite each other.
+DATA_PROFILES = ("v1", "v2")
+DATA_PROFILE = os.environ.get("REFUSAL_DATA_PROFILE", "v2")
+if DATA_PROFILE not in DATA_PROFILES:
+    raise ValueError(f"REFUSAL_DATA_PROFILE={DATA_PROFILE!r}; expected one of {DATA_PROFILES}")
+PROFILE_DATA_DIR = DATA_DIR if DATA_PROFILE == "v1" else DATA_DIR / DATA_PROFILE
+RESULTS_DIR = RESULTS_ROOT if DATA_PROFILE == "v1" else RESULTS_ROOT / DATA_PROFILE
 RLRAZOR_ROOT = PROJECT_ROOT / "nnsj" / "differential-circuit-vulnerability" / "RLRazor"
 
 M0_NAME = "Qwen/Qwen2.5-3B-Instruct"
@@ -115,6 +130,27 @@ def write_jsonl(rows: Iterable[Dict[str, Any]], path: Path) -> Path:
         for row in rows:
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
     return path
+
+
+# --------------------------------------------------------------------------
+# M0 conditioning for the unfiltered v2 test split (prereg D16)
+# --------------------------------------------------------------------------
+
+def m0_condition(pairs: List[Dict], side: str) -> List[Dict]:
+    """Restrict to pairs where M0 behaved as the readout needs.
+
+    side='harmful'  -> keep pairs whose harmful prompt M0 refused (ablation
+                       readouts: a drop needs a refusal to remove);
+    side='harmless' -> keep pairs whose harmless prompt M0 complied with
+                       (addition readouts: induced refusal needs a baseline).
+    The v2 test split is not M0-filtered (D16) and carries the per-pair
+    verdicts; v1 pairs lack them because every v1 pair is already filtered, so
+    they pass through unchanged."""
+    key = f"{side}_m0_refused"
+    if not pairs or key not in pairs[0]:
+        return list(pairs)
+    want = side == "harmful"
+    return [p for p in pairs if bool(p[key]) == want]
 
 
 # --------------------------------------------------------------------------

@@ -1,0 +1,38 @@
+# Refusal-mechanism project — Python dependencies (Python >= 3.10).
+#
+#   pip install -r requirements.txt
+#
+# Lower bounds only. They are the bounds of env/requirements-remote.txt, the
+# environment that produced D8-D14, plus what the D15/D16 code needs. Nothing is
+# pinned exactly, so pip leaves an already-installed CUDA build of torch alone
+# (a pinned torch can pull a CPU-only or wrong-CUDA wheel over a working one).
+#
+# For exact reproducibility, freeze the environment that produced the results
+# and commit it next to them:
+#   pip freeze > requirements.lock.txt
+#
+# Not pip-installable: the prior project (arXiv:2605.28860), cloned under nnsj/:
+#   git clone https://github.com/rl-sft-circuit-research/differential-circuit-vulnerability.git \
+#       nnsj/differential-circuit-vulnerability
+# It supplies the science-QA data and three imports. Only SFT/RL training
+# (train_chain.py) and the science new-task score (behaviour.py without
+# --skip-nts) need it. See RUNNING_GUIDE.md.
+
+# --- core: every GPU script (filter, direction, behaviour, controls, D15 experiments)
+torch>=2.2                # bf16 on Ampere/Ada (L40S); install the CUDA build for your driver first
+transformers>=4.51        # Qwen2.5, chat templates, Trainer(processing_class=...); tested up to 5.x
+accelerate>=1.2           # device_map="auto" in common.load_model_and_tokenizer
+huggingface_hub>=0.27     # model/tokenizer download, optional checkpoint push
+safetensors>=0.4.5
+numpy>=1.26               # controls.py permutation null, bootstrap summaries
+tqdm>=4.66
+
+# --- analysis and figures (CPU)
+matplotlib>=3.8           # analysis.py, figures_final.py
+
+# --- training chain and science data: train_chain.py (SFT -> Dr.GRPO), science_data.py.
+# M_SFT / M_RL already exist; these are needed to retrain them and for the v1
+# Alpaca download in build_dataset.py --build (v1 profile only).
+datasets>=3.2
+trl>=0.26                 # SFTConfig(completion_only_loss=), GRPOConfig(loss_type="dr_grpo"); env/setup.sh enforces it
+bitsandbytes>=0.45; platform_system == "Linux"   # optim="adamw_bnb_8bit" (train_chain default)

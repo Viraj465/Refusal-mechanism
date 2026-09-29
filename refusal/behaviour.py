@@ -7,6 +7,9 @@ Reported on the *test* split:
   - science-QA new-task score (proves the fine-tunes learned the target task)
   - expected forward KL from M0, reported separately on harmful and harmless
     prompts (prior work's Eq. 1)
+  - data profile v2 only: over-refusal on XSTest's safe prompts (prompts that
+    look unsafe but are not), overall and per XSTest type (D16). The Alpaca
+    compliance guard cannot see this kind of over-refusal.
 
 Usage
   python behaviour.py --checkpoint Qwen/Qwen2.5-3B-Instruct --tag M0
@@ -99,6 +102,24 @@ def behavioural_rates(
     if keep_completions:
         out["completions"] = completions
     return out
+
+
+def overrefusal_rates(model, tokenizer, rows: List[Dict], batch_size: int = 16,
+                      max_new_tokens: int = 64) -> Dict:
+    """Refusal rate on XSTest-safe prompts, overall and per XSTest type."""
+    flags: List[bool] = []
+    for start in range(0, len(rows), batch_size):
+        chats = [r["chat_formatted"] for r in rows[start:start + batch_size]]
+        flags += [is_refusal(t) for t in _greedy_batch(model, tokenizer, chats, max_new_tokens)]
+    by_type: Dict[str, List[bool]] = {}
+    for r, f in zip(rows, flags):
+        by_type.setdefault(r.get("category", ""), []).append(f)
+    return {
+        "over_refusal_rate": wilson_ci(sum(flags), len(flags)),
+        "by_type": {k: wilson_ci(sum(v), len(v)) for k, v in sorted(by_type.items())},
+        "per_prompt_refused": flags,
+        "ids": [r["id"] for r in rows],
+    }
 
 
 # --------------------------------------------------------------------------
@@ -261,6 +282,7 @@ def main() -> None:
     ap.add_argument("--nts-samples", type=int, default=200)
     ap.add_argument("--skip-nts", action="store_true")
     ap.add_argument("--skip-kl", action="store_true")
+    ap.add_argument("--skip-overrefusal", action="store_true", help="v2: skip the XSTest-safe block")
     ap.add_argument("--no-completions", action="store_true",
                     help="skip saving the random completion sample (not recommended)")
     ap.add_argument("--n-examples", type=int, default=10,
@@ -270,7 +292,7 @@ def main() -> None:
 
     set_seed(args.seed)
     sys.path.insert(0, str(Path(__file__).resolve().parent / "data"))
-    from build_dataset import load_pairs  # noqa: E402
+    from build_dataset import OVERREFUSAL_PATH, load_overrefusal, load_pairs  # noqa: E402
 
     pairs = load_pairs(args.split)
     print(f"[behaviour] {args.tag}: {len(pairs)} pairs from split '{args.split}'")
@@ -296,6 +318,12 @@ def main() -> None:
         # The full completion lists are large and are not what the writeup uses;
         # the seeded sample above is. Drop them from the saved payload.
         payload["behaviour"].pop("completions", None)
+
+    if OVERREFUSAL_PATH.exists() and not args.skip_overrefusal:
+        payload["overrefusal_xstest"] = overrefusal_rates(
+            model, tokenizer, load_overrefusal(), args.batch_size, args.max_new_tokens)
+        o = payload["overrefusal_xstest"]["over_refusal_rate"]
+        print(f"  over-refusal(XSTest safe) = {o['point']:.3f}  [{o['low']:.3f}, {o['high']:.3f}]")
 
     rr = payload["behaviour"]["refusal_rate_harmful"]
     cr = payload["behaviour"]["compliance_rate_harmless"]

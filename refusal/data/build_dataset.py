@@ -1,6 +1,21 @@
 """
 Stage 1 — refusal dataset construction.
 
+DATA PROFILES (prereg.md §9 D16), selected by REFUSAL_DATA_PROFILE (default v2):
+  v1  AdvBench + HarmBench + MaliciousInstruct vs Alpaca, M0-filtered in every
+      split. Frozen: D9-D14 were scored on it. Files in refusal/data/.
+  v2  StrongREJECT + Do-Not-Answer + XSTest-unsafe vs Alpaca, disjoint from v1.
+      Only train/val are M0-filtered; test is scored unfiltered so it carries
+      no selection-on-M0 bias. XSTest-safe is kept as a separate over-refusal
+      set. Files in refusal/data/v2/.
+
+    REFUSAL_DATA_PROFILE=v2 python refusal/data/build_dataset.py --fetch    # CPU, no tokenizer
+    REFUSAL_DATA_PROFILE=v2 python refusal/data/build_dataset.py --build    # CPU, needs Qwen tokenizer
+    REFUSAL_DATA_PROFILE=v2 python refusal/data/build_dataset.py --filter   # GPU
+
+v2's --fetch writes sources.jsonl, a pinned snapshot of the selected prompts
+with source URLs, so the dataset does not drift if an upstream file changes.
+
 Two modes, deliberately separated so the expensive one is the only thing that
 needs a GPU:
 
@@ -39,7 +54,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from common import (  # noqa: E402
     DATA_DIR,
+    DATA_PROFILE,
     M0_NAME,
+    PROFILE_DATA_DIR,
     REFUSAL_SUBSTRINGS,
     format_chat,
     is_refusal,
@@ -50,10 +67,13 @@ from common import (  # noqa: E402
     write_jsonl,
 )
 
-RAW_PATH = DATA_DIR / "refusal_prompts_raw.jsonl"
-PAIRS_PATH = DATA_DIR / "refusal_pairs.jsonl"
-SPLITS_PATH = DATA_DIR / "splits.json"
-REPORT_PATH = DATA_DIR / "filter_report.md"
+RAW_PATH = PROFILE_DATA_DIR / "refusal_prompts_raw.jsonl"
+PAIRS_PATH = PROFILE_DATA_DIR / "refusal_pairs.jsonl"
+SPLITS_PATH = PROFILE_DATA_DIR / "splits.json"
+REPORT_PATH = PROFILE_DATA_DIR / "filter_report.md"
+SOURCES_PATH = PROFILE_DATA_DIR / "sources.jsonl"             # v2 pinned snapshot
+OVERREFUSAL_PATH = PROFILE_DATA_DIR / "overrefusal.jsonl"     # v2 XSTest-safe
+V1_RAW_PATH = DATA_DIR / "refusal_prompts_raw.jsonl"
 CACHE_DIR = DATA_DIR / "_cache"
 
 # Registered split sizes (prereg.md §3).
@@ -70,6 +90,29 @@ SOURCES = {
     "harmbench": "https://raw.githubusercontent.com/centerforaisafety/HarmBench/main/data/behavior_datasets/harmbench_behaviors_text_all.csv",
     "alpaca": "hf://tatsu-lab/alpaca",
 }
+
+# v2 sources. All raw GitHub files: no HF access needed, and each is the
+# benchmark authors' own release.
+SOURCES_V2 = {
+    "strongreject": "https://raw.githubusercontent.com/alexandrasouly/strongreject/main/strongreject_dataset/strongreject_dataset.csv",
+    "donotanswer": "https://raw.githubusercontent.com/Libr-AI/do-not-answer/main/datasets/data_en.csv",
+    "xstest": "https://raw.githubusercontent.com/paul-rottger/xstest/main/xstest_prompts.csv",
+    "alpaca": "https://raw.githubusercontent.com/tatsu-lab/stanford_alpaca/main/alpaca_data.json",
+}
+# StrongREJECT re-uses some prompts from v1's own sources; drop them so v2 is
+# disjoint from v1 by construction, not just by exact-text dedupe.
+V2_EXCLUDED_STRONGREJECT_SOURCES = {"AdvBench", "MaliciousInstruct"}
+# Do-Not-Answer's harm-refusal areas only. "Human-Chatbot Interaction Harms"
+# (anthropomorphisation) and "Misinformation Harms" (mostly medical/legal
+# advice) are different refusal categories with distinct directions
+# (arXiv:2602.02132), so mixing them in would change what the direction means.
+V2_DONOTANSWER_AREAS = {
+    "Malicious Uses",
+    "Information Hazards",
+    "Discrimination, Exclusion, Toxicity, Hateful, Offensive",
+}
+V2_N_HARMLESS = 3000        # pairing headroom, as in D3
+V2_FIT_FRACTION = 0.4       # share of each pool reserved for train/val (filtered)
 
 
 # ==========================================================================
@@ -213,6 +256,229 @@ def build_raw(n_harmful: int, n_harmless: int, seed: int = 0) -> Path:
         f"({len(harmful)} harmful / {len(harmless)} harmless)"
     )
     return RAW_PATH
+
+
+# ==========================================================================
+# v2 : --fetch (CPU, no tokenizer) + --build (CPU, tokenizer)
+# ==========================================================================
+
+def select_v2_sources(sr_csv: str, dna_csv: str, xs_csv: str, alpaca_json: str,
+                      exclude: Optional[set] = None, n_harmless: int = V2_N_HARMLESS,
+                      seed: int = 0) -> List[Dict]:
+    """Pure selection over the raw benchmark files. Returns rows with
+    text / label (harmful | harmless | overrefusal) / source / category.
+
+    `exclude` holds lower-cased prompt texts that must not appear (v1's pool)."""
+    import random
+
+    exclude = exclude or set()
+    rows: List[Dict] = []
+
+    def add(text, label, source, category):
+        text = (text or "").strip()
+        if text and text.lower() not in exclude:
+            rows.append({"text": text, "label": label, "source": source, "category": category})
+
+    for r in csv.DictReader(io.StringIO(sr_csv)):
+        if r.get("source", "") not in V2_EXCLUDED_STRONGREJECT_SOURCES:
+            add(r.get("forbidden_prompt"), "harmful", "strongreject", r.get("category", ""))
+    for r in csv.DictReader(io.StringIO(dna_csv)):
+        if r.get("risk_area", "") in V2_DONOTANSWER_AREAS:
+            add(r.get("question"), "harmful", "donotanswer", r.get("risk_area", ""))
+    for r in csv.DictReader(io.StringIO(xs_csv)):
+        if r.get("label") == "unsafe":
+            add(r.get("prompt"), "harmful", "xstest_unsafe", r.get("type", ""))
+        elif r.get("label") == "safe":
+            add(r.get("prompt"), "overrefusal", "xstest_safe", r.get("type", ""))
+
+    alpaca = [a["instruction"] for a in json.loads(alpaca_json) if not a.get("input", "").strip()]
+    rng = random.Random(seed)
+    rng.shuffle(alpaca)
+    before = len(rows)
+    for text in alpaca:
+        if len(rows) - before >= n_harmless:
+            break
+        add(text, "harmless", "alpaca", "")
+
+    # exact-text dedupe across everything, first occurrence wins
+    seen, out = set(), []
+    for r in rows:
+        key = r["text"].lower()
+        if key not in seen:
+            seen.add(key)
+            out.append({**r, "source_url": SOURCES_V2[r["source"].split("_")[0]]})
+    return out
+
+
+def fetch_v2(seed: int = 0) -> Path:
+    exclude = set()
+    if V1_RAW_PATH.exists():
+        exclude = {r["prompt_text"].strip().lower() for r in read_jsonl(V1_RAW_PATH)}
+        print(f"[fetch] excluding {len(exclude)} v1 prompts")
+    rows = select_v2_sources(
+        _fetch(SOURCES_V2["strongreject"], "v2_strongreject.csv"),
+        _fetch(SOURCES_V2["donotanswer"], "v2_donotanswer.csv"),
+        _fetch(SOURCES_V2["xstest"], "v2_xstest.csv"),
+        _fetch(SOURCES_V2["alpaca"], "v2_alpaca.json"),
+        exclude=exclude, seed=seed,
+    )
+    write_jsonl(rows, SOURCES_PATH)
+    from collections import Counter
+    print(f"[fetch] wrote {len(rows)} rows to {SOURCES_PATH}: "
+          f"{dict(Counter((r['label'], r['source']) for r in rows))}")
+    return SOURCES_PATH
+
+
+def build_raw_v2() -> Path:
+    if not SOURCES_PATH.exists():
+        raise FileNotFoundError(f"{SOURCES_PATH} missing — run `--fetch` first.")
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(M0_NAME)
+    src = read_jsonl(SOURCES_PATH)
+    raw, over = [], []
+    for idx, r in enumerate(src):
+        chat = format_chat(tokenizer, r["text"])
+        row = {
+            "id": f"{r['label']}_{idx:05d}",
+            "prompt_text": r["text"],
+            "chat_formatted": chat,
+            "n_prompt_tokens": len(tokenizer(chat, add_special_tokens=False).input_ids),
+            "label": r["label"],
+            "source": r["source"],
+            "category": r["category"],
+            "source_url": r["source_url"],
+        }
+        (over if r["label"] == "overrefusal" else raw).append(row)
+    write_jsonl(raw, RAW_PATH)
+    write_jsonl(over, OVERREFUSAL_PATH)
+    print(f"[build] wrote {len(raw)} rows to {RAW_PATH}, {len(over)} to {OVERREFUSAL_PATH}")
+    return RAW_PATH
+
+
+def assemble_v2(scored: List[Dict], seed: int = 0, fit_fraction: float = V2_FIT_FRACTION,
+                allow_short: bool = False) -> Tuple[List[Dict], Dict[str, List[int]], Dict]:
+    """v2 split assembly. Pure; CPU-tested.
+
+    Each label's pool is split into a fit pool and a test pool BEFORE looking at
+    M0's behaviour. The fit pool is filtered (harmful refused / harmless
+    complied) and supplies train/val exactly as in v1. The test pool is paired
+    without any filter, so test refusal rates are not conditioned on M0 having
+    refused — the selection effect the external review flagged."""
+    import random
+
+    rng = random.Random(seed)
+    pools: Dict[str, Dict[str, List[Dict]]] = {}
+    for label in ("harmful", "harmless"):
+        rows = sorted((r for r in scored if r["label"] == label), key=lambda r: r["id"])
+        rng.shuffle(rows)
+        k = int(round(fit_fraction * len(rows)))
+        pools[label] = {"fit": rows[:k], "test": rows[k:]}
+
+    fit_h = [r for r in pools["harmful"]["fit"] if r["refused"]]
+    fit_c = [r for r in pools["harmless"]["fit"] if not r["refused"]]
+    fit_pairs = length_match(fit_h, fit_c, tolerance=LENGTH_TOLERANCE)
+    rng.shuffle(fit_pairs)   # length_match orders by length; train/val must not
+    need = N_TRAIN + N_VAL
+    if len(fit_pairs) >= need:
+        n_tr, n_va = N_TRAIN, N_VAL
+    elif allow_short:
+        n_tr = int(len(fit_pairs) * N_TRAIN / need)
+        n_va = len(fit_pairs) - n_tr
+    else:
+        raise RuntimeError(
+            f"only {len(fit_pairs)} filtered fit pairs for the registered {need} train+val; "
+            "raise --fit-fraction or pass --allow-short-splits (and log it in prereg §9)")
+
+    test_pairs = length_match(pools["harmful"]["test"], pools["harmless"]["test"],
+                              tolerance=LENGTH_TOLERANCE)
+    refused = {r["id"]: bool(r["refused"]) for r in scored}
+
+    out: List[Dict] = []
+    splits: Dict[str, List[int]] = {"train": [], "val": [], "test": []}
+    chunks = (("train", fit_pairs[:n_tr]), ("val", fit_pairs[n_tr:n_tr + n_va]), ("test", test_pairs))
+    for split, chunk in chunks:
+        for p in chunk:
+            splits[split].append(len(out))
+            out.append({**p, "pair_id": f"pair_{len(out):05d}", "split": split,
+                        "harmful_m0_refused": refused[p["harmful_id"]],
+                        "harmless_m0_refused": refused[p["harmless_id"]]})
+    stats = {
+        "fit_pool": {k: len(v["fit"]) for k, v in pools.items()},
+        "test_pool": {k: len(v["test"]) for k, v in pools.items()},
+        "fit_pairs_available": len(fit_pairs),
+        "fit_pairs_unused": len(fit_pairs) - n_tr - n_va,
+        "test_harmful_m0_refusal": (
+            sum(p["harmful_m0_refused"] for p in out if p["split"] == "test") / max(1, len(test_pairs))),
+    }
+    return out, splits, stats
+
+
+def run_filter_v2(model_path: str, batch_size: int, max_new_tokens: int, seed: int,
+                  fit_fraction: float, allow_short: bool) -> None:
+    from tqdm import tqdm
+
+    set_seed(seed)
+    if not RAW_PATH.exists():
+        raise FileNotFoundError(f"{RAW_PATH} missing — run `--fetch` then `--build` first.")
+    rows = read_jsonl(RAW_PATH)
+    model, tokenizer = load_model_and_tokenizer(model_path)
+
+    scored: List[Dict] = []
+    for start in tqdm(range(0, len(rows), batch_size), desc="M0 behavioural scoring (v2)"):
+        batch = rows[start:start + batch_size]
+        texts, first_ids = _generate_batch(
+            model, tokenizer, [r["chat_formatted"] for r in batch], max_new_tokens, model.device)
+        for row, completion, target_ids in zip(batch, texts, first_ids):
+            scored.append({**row, "completion": completion, "refused": is_refusal(completion),
+                           "target_token_ids": target_ids, "target_text": tokenizer.decode(target_ids)})
+
+    pairs, splits, stats = assemble_v2(scored, seed, fit_fraction, allow_short)
+    write_jsonl(pairs, PAIRS_PATH)
+    with SPLITS_PATH.open("w", encoding="utf-8") as fh:
+        json.dump(splits, fh, indent=2)
+
+    n_seen = {l: sum(r["label"] == l for r in scored) for l in ("harmful", "harmless")}
+    n_ref = {l: sum(r["refused"] for r in scored if r["label"] == l) for l in ("harmful", "harmless")}
+    write_report_v2(scored, pairs, splits, stats, n_seen, n_ref, model_path, max_new_tokens)
+    save_json({"profile": DATA_PROFILE, "model": model_path, "n_seen": n_seen, "n_refused": n_ref,
+               "splits": {k: len(v) for k, v in splits.items()}, "stats": stats,
+               "fit_fraction": fit_fraction, "seed": seed}, "stage1_filter")
+
+
+def write_report_v2(scored, pairs, splits, stats, n_seen, n_ref, model_path, max_new_tokens) -> None:
+    from collections import Counter
+
+    lines = [
+        "# Stage 1 filter report (data profile v2)", "",
+        f"- Judge model (M0): `{model_path}`",
+        f"- Decoding: greedy, {max_new_tokens} new tokens; frozen substring judge ({len(REFUSAL_SUBSTRINGS)} prefixes)",
+        f"- Fit pool = {V2_FIT_FRACTION:.0%} of each label, drawn before scoring; only the fit pool is filtered.",
+        "- **Test is not filtered on M0 behaviour.** Per-pair `harmful_m0_refused` / `harmless_m0_refused` record M0's verdict.",
+        "", "## M0 behaviour on the full pool", "",
+        "| Class | Scored | Refused by M0 |", "|---|---|---|",
+    ]
+    for l in ("harmful", "harmless"):
+        lines.append(f"| {l} | {n_seen[l]} | {n_ref[l]} ({100 * n_ref[l] / max(1, n_seen[l]):.1f}%) |")
+    by_src = Counter((r["source"], r["refused"]) for r in scored if r["label"] == "harmful")
+    lines += ["", "M0 refusal by harmful source:", ""]
+    for src in sorted({s for s, _ in by_src}):
+        n = by_src[(src, True)] + by_src[(src, False)]
+        lines.append(f"- {src}: {by_src[(src, True)]}/{n} refused ({SOURCES_V2[src.split('_')[0]]})")
+    lines += [
+        "", "## Splits (seed 0)", "",
+        "| Split | Pairs | Filtered on M0? | Use |", "|---|---|---|---|",
+        f"| train | {len(splits['train'])} | yes | direction fitting |",
+        f"| val | {len(splits['val'])} | yes | layer / threshold selection |",
+        f"| test | {len(splits['test'])} | **no** | reported numbers only |",
+        "", f"Fit pairs available {stats['fit_pairs_available']}, unused {stats['fit_pairs_unused']}. "
+        f"M0 refuses {stats['test_harmful_m0_refusal']:.3f} of test harmful prompts.",
+        "", "Harmful source mix in test:", "",
+    ]
+    for src, c in Counter(p["harmful_source"] for p in pairs if p["split"] == "test").most_common():
+        lines.append(f"- {src}: {c}")
+    REPORT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"[filter] wrote {REPORT_PATH}")
 
 
 # ==========================================================================
@@ -456,7 +722,12 @@ def write_report(rows, kept, pairs, splits, n_seen, n_kept, model_path, max_new_
 # ==========================================================================
 
 def load_pairs(split: Optional[str] = None) -> List[Dict]:
-    """Load pairs, optionally restricted to one registered split."""
+    """Load pairs of the active data profile, optionally one registered split."""
+    if not PAIRS_PATH.exists():
+        raise FileNotFoundError(
+            f"{PAIRS_PATH} missing for data profile '{DATA_PROFILE}'. Build it with "
+            "build_dataset.py (--fetch/--build/--filter), or set REFUSAL_DATA_PROFILE=v1 "
+            "for the frozen v1 data.")
     pairs = read_jsonl(PAIRS_PATH)
     if split is None:
         return pairs
@@ -467,8 +738,16 @@ def load_pairs(split: Optional[str] = None) -> List[Dict]:
     return [pairs[i] for i in splits[split]]
 
 
+def load_overrefusal() -> List[Dict]:
+    """XSTest safe prompts (v2 only): look unsafe, are not. Over-refusal set."""
+    if not OVERREFUSAL_PATH.exists():
+        raise FileNotFoundError(f"{OVERREFUSAL_PATH} missing (v2 only; run --build).")
+    return read_jsonl(OVERREFUSAL_PATH)
+
+
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--fetch", action="store_true", help="v2, CPU: download + select -> sources.jsonl")
     ap.add_argument("--build", action="store_true", help="CPU: download + chat-template")
     ap.add_argument("--filter", action="store_true", help="GPU: M0 behavioural filter + splits")
     ap.add_argument("--model", default=M0_NAME)
@@ -478,10 +757,23 @@ def main() -> None:
     ap.add_argument("--max-new-tokens", type=int, default=JUDGE_MAX_NEW_TOKENS)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--allow-short-splits", action="store_true")
+    ap.add_argument("--fit-fraction", type=float, default=V2_FIT_FRACTION, help="v2 only")
     args = ap.parse_args()
 
-    if not (args.build or args.filter):
-        ap.error("pick --build (CPU) or --filter (GPU)")
+    print(f"[data] profile {DATA_PROFILE} -> {PROFILE_DATA_DIR}")
+    if not (args.fetch or args.build or args.filter):
+        ap.error("pick --fetch (v2, CPU), --build (CPU) or --filter (GPU)")
+    if DATA_PROFILE == "v2":
+        if args.fetch:
+            fetch_v2(seed=args.seed)
+        if args.build:
+            build_raw_v2()
+        if args.filter:
+            run_filter_v2(args.model, args.batch_size, args.max_new_tokens, args.seed,
+                          args.fit_fraction, args.allow_short_splits)
+        return
+    if args.fetch:
+        ap.error("--fetch is v2 only; v1 builds straight from its sources")
     if args.build:
         build_raw(args.n_harmful, args.n_harmless, seed=args.seed)
     if args.filter:

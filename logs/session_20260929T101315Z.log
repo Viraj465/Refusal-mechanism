@@ -1,0 +1,72 @@
+NVIDIA L40S, 46068 MiB
+
+=== [v1] smoke  (elapsed 0 min) ===
++ python refusal/smoke_test.py
+[results] wrote /teamspace/studios/this_studio/Refusal-Mechanism/refusal/results/_smoketest_20260929T101315Z.json
+[results] wrote /teamspace/studios/this_studio/Refusal-Mechanism/refusal/results/_smoketest_20260929T101316Z.json
+[controls] 6 masks across 3 checkpoints: ['M0', 'M_RL', 'M_SFT']
+[results] wrote /teamspace/studios/this_studio/Refusal-Mechanism/refusal/results/controls/controls_stats_20260929T101318Z.json
+
+==================================================================
+ CONTROLS
+==================================================================
+ circuit sizes: {'M0': 240, 'M_RL': 240, 'M_SFT': 200}
+ split-half ceiling: {'M0': 0.956}
+ seed stability M0: Jaccard 0.920
+ retention M0 vs M_RL: IoU 0.714 (null p97.5 0.308)  -> not_preserved
+ retention M0 vs M_SFT: IoU 0.375 (null p97.5 0.272)  -> not_preserved
+ H2: gap +0.339 vs seed noise 0.07999999999999996 -> SUPPORTED (report as replication in a new regime, not a discovery)
+[analysis] wrote /tmp/tmp8jzda1_n/f1.png
+[analysis] wrote /tmp/tmp8jzda1_n/f2.png
+[analysis] wrote /tmp/tmp8jzda1_n/s.md
+[analysis] no head-level masks — Figure 2 is the H4 dissociation quadrant (prereg §9 D6 scope decision)
+[analysis] wrote /tmp/tmpvc5eolu3/f2b.png
+====================================================================
+ Phase-A smoke tests
+====================================================================
+  PASS  science files present  -- 2400 rows across 6 chemistry tasks
+  PASS  refusal judge  -- 13 frozen prefixes, 6/6 correct
+  PASS  length-matched pairing  -- 10/10 matched, reuse-free, rejects out-of-window
+  PASS  split discipline  -- 200/50/150 exact, disjoint, reproducible; scales on short yield
+  PASS  statistics  -- Wilson CI + Jaccard behave at the edges
+  PASS  results IO never overwrites  -- timestamped, non-clobbering
+  PASS  mask annealing  -- sharpens under annealing, thresholds correctly, differentiable
+  PASS  target log-prob = geometric mean  -- geometric mean correct, padding-masked
+  PASS  directional ablation is a projection  -- idempotent projection, orthogonal complement preserved
+  PASS  completion sample is random and seeded  -- uniform, seeded, reproducible, index-aligned, judge verdict attached
+  PASS  permutation null is calibrated  -- 50% density -> 0.335 (p97.5 0.371); 5% -> 0.024
+  PASS  controls end-to-end  -- IoU M0-SFT 0.38 < M0-RL 0.71, null p97.5 0.31, H2 gap +0.34
+  PASS  H2 three-way outcome  -- supported / reversed / null / undetermined all distinguished
+  PASS  figures render  -- both figures + fallback, H4 cells correct
+  PASS  data profile isolation  -- v1 -> data/, results/; v2 -> data/v2/, results/v2/; checkpoints shared; unknown rejected
+  PASS  v2 source selection  -- v1-disjoint, harm categories only, deduped, XSTest split safe/unsafe
+  PASS  v2 split assembly  -- train/val filtered, test unfiltered (M0 refusal 0.74), disjoint, shuffled, reproducible; 600 test pairs
+  PASS  rotation geometry  -- exact cosines on the grid, real axis reproduces d_other at c_obs=0.950
+  PASS  rotation verdict logic  -- c* = 0.767; undetectable / detectable / ambiguous all reachable
+  PASS  matched-layer cosine  -- cos(M0,RL)@3 = 0.933, axis agreement 1.00, ceiling verdicts correct
+  SKIP  science schema -> normaliser  -- needs datasets
+  SKIP  science dataset split  -- needs datasets
+  SKIP  Qwen chat template  -- needs transformers
+  SKIP  triplet batching positions  -- needs transformers
+  SKIP  alpha ablation hook (tiny Qwen2)  -- needs transformers
+  SKIP  single-layer residual ablation indexing  -- needs transformers
+  SKIP  refusal score is padding-invariant  -- needs transformers
+  SKIP  rotation dose-response end-to-end  -- needs transformers
+  SKIP  addition sweep compare  -- needs transformers
+  SKIP  graded ablation summary  -- needs transformers
+  SKIP  science reward function  -- needs trl
+--------------------------------------------------------------------
+ 20 passed, 0 failed, 11 skipped
+ (skipped tiers run on the remote box once torch/trl are installed)
+
+=== [v1] fit_M0  (elapsed 0 min) ===
++ python refusal/direction.py --mode fit --checkpoint Qwen/Qwen2.5-3B-Instruct --tag M0
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/Refusal-Mechanism/refusal/direction.py", line 562, in <module>
+    main()
+  File "/teamspace/studios/this_studio/Refusal-Mechanism/refusal/direction.py", line 418, in main
+    model, tokenizer = load_model_and_tokenizer(args.checkpoint)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/Refusal-Mechanism/refusal/common.py", line 243, in load_model_and_tokenizer
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+ModuleNotFoundError: No module named 'transformers'

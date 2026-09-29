@@ -1,0 +1,33 @@
+{
+  "profile": "v2",
+  "model": "Qwen/Qwen2.5-3B-Instruct",
+  "n_seen": {
+    "harmful": 1142,
+    "harmless": 3000
+  },
+  "n_refused": {
+    "harmful": 826,
+    "harmless": 47
+  },
+  "splits": {
+    "train": 200,
+    "val": 50,
+    "test": 607
+  },
+  "stats": {
+    "fit_pool": {
+      "harmful": 457,
+      "harmless": 1200
+    },
+    "test_pool": {
+      "harmful": 685,
+      "harmless": 1800
+    },
+    "fit_pairs_available": 300,
+    "fit_pairs_unused": 50,
+    "test_harmful_m0_refusal": 0.7199341021416804
+  },
+  "fit_fraction": 0.4,
+  "seed": 0,
+  "_written_utc": "20260929T125621Z"
+}

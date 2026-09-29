@@ -1,7 +1,8 @@
 # The prior project, cloned with its own .git. Referenced, never vendored.
 nnsj/
+nnsj-*/
 env/
-
+nnsj-rl-razor-experiment
 # Downloaded source datasets — reproducible from build_dataset.py, large.
 refusal/data/_cache/
 

@@ -89,7 +89,6 @@ Expect everything to pass except environment-only checks: `science files present
 stop and look before spending GPU time.
 
 ---
-
 ## 2. The session — one command (~5.5 h)
 
 ```bash

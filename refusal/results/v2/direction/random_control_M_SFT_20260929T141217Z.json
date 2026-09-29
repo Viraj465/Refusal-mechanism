@@ -1,0 +1,101 @@
+{
+  "tag": "M_SFT",
+  "checkpoint": "refusal/results/checkpoints/M_SFT",
+  "donor": "M0",
+  "layer": 27,
+  "split": "test",
+  "m0_conditioned": true,
+  "n_pairs": 437,
+  "d_model": 2048,
+  "seed": 0,
+  "baseline": {
+    "harmful": {
+      "point": 0.954233409610984,
+      "low": 0.9303694185906034,
+      "high": 0.9701808017152843,
+      "n": 437
+    },
+    "harmless": {
+      "point": 0.011441647597254004,
+      "low": 0.0048967451548472245,
+      "high": 0.026501380611868068,
+      "n": 437
+    }
+  },
+  "real": {
+    "refusal_harmful": {
+      "point": 0.011441647597254004,
+      "low": 0.0048967451548472245,
+      "high": 0.026501380611868068,
+      "n": 437
+    },
+    "over_refusal_harmless": {
+      "point": 0.006864988558352402,
+      "low": 0.0023373641320203146,
+      "high": 0.01998720777770871,
+      "n": 437
+    },
+    "refusal_drop": 0.94279176201373
+  },
+  "random": [
+    {
+      "index": 0,
+      "cos_with_real_direction": -0.015134798362851143,
+      "refusal_harmful": {
+        "point": 0.9450800915331807,
+        "low": 0.9195834042414731,
+        "high": 0.9628197083504418,
+        "n": 437
+      },
+      "over_refusal_harmless": {
+        "point": 0.013729977116704805,
+        "low": 0.006307272202620661,
+        "high": 0.02962763049258777,
+        "n": 437
+      },
+      "refusal_drop": 0.009153318077803285
+    },
+    {
+      "index": 1,
+      "cos_with_real_direction": -0.015483451075851917,
+      "refusal_harmful": {
+        "point": 0.9610983981693364,
+        "low": 0.9385882317141647,
+        "high": 0.9755723193772023,
+        "n": 437
+      },
+      "over_refusal_harmless": {
+        "point": 0.013729977116704805,
+        "low": 0.006307272202620661,
+        "high": 0.02962763049258777,
+        "n": 437
+      },
+      "refusal_drop": -0.006864988558352381
+    },
+    {
+      "index": 2,
+      "cos_with_real_direction": -0.036043647676706314,
+      "refusal_harmful": {
+        "point": 0.954233409610984,
+        "low": 0.9303694185906034,
+        "high": 0.9701808017152843,
+        "n": 437
+      },
+      "over_refusal_harmless": {
+        "point": 0.016018306636155607,
+        "low": 0.007780358329413109,
+        "high": 0.032691321294288464,
+        "n": 437
+      },
+      "refusal_drop": 0.0
+    }
+  ],
+  "summary": {
+    "real_drop": 0.94279176201373,
+    "random_drop_mean": 0.0007627765064836348,
+    "random_drop_max": 0.009153318077803285,
+    "real_exceeds_all_random": true,
+    "margin_over_best_random": 0.9336384439359268
+  },
+  "_written_utc": "20260929T141217Z"
+}

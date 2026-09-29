@@ -43,7 +43,8 @@ if DATA_PROFILE not in DATA_PROFILES:
     raise ValueError(f"REFUSAL_DATA_PROFILE={DATA_PROFILE!r}; expected one of {DATA_PROFILES}")
 PROFILE_DATA_DIR = DATA_DIR if DATA_PROFILE == "v1" else DATA_DIR / DATA_PROFILE
 RESULTS_DIR = RESULTS_ROOT if DATA_PROFILE == "v1" else RESULTS_ROOT / DATA_PROFILE
-RLRAZOR_ROOT = PROJECT_ROOT / "nnsj" / "differential-circuit-vulnerability" / "RLRazor"
+RLRAZOR_ROOT = PROJECT_ROOT / "nnsj-rl-razor-experiment" / "RLRazor"
+# /Refusal-Mechanism/
 
 M0_NAME = "Qwen/Qwen2.5-3B-Instruct"
 

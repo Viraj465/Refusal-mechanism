@@ -1,0 +1,14 @@
+NVIDIA L40S, 46068 MiB
+[skip] v1/smoke (done)
+
+=== [v1] fit_M0  (elapsed 0 min) ===
++ python refusal/direction.py --mode fit --checkpoint Qwen/Qwen2.5-3B-Instruct --tag M0
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/Refusal-Mechanism/refusal/direction.py", line 562, in <module>
+    main()
+  File "/teamspace/studios/this_studio/Refusal-Mechanism/refusal/direction.py", line 418, in main
+    model, tokenizer = load_model_and_tokenizer(args.checkpoint)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/Refusal-Mechanism/refusal/common.py", line 243, in load_model_and_tokenizer
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+ModuleNotFoundError: No module named 'transformers'

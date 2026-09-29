@@ -1,11 +1,19 @@
 # Refusal-mechanism project — Python dependencies (Python >= 3.10).
 #
-#   pip install -r requirements.txt
+#   python -m pip install -r requirements.txt
 #
-# Lower bounds only. They are the bounds of env/requirements-remote.txt, the
-# environment that produced D8-D14, plus what the D15/D16 code needs. Nothing is
-# pinned exactly, so pip leaves an already-installed CUDA build of torch alone
-# (a pinned torch can pull a CPU-only or wrong-CUDA wheel over a working one).
+# On Lightning.ai, install into the env that `python` runs (conda `cloudspace`):
+# `python -m pip`, not a separate uv venv.
+#
+# Bounded ranges, not the latest releases. The lower bounds are those of
+# env/requirements-remote.txt (the environment that produced D8-D14). The upper
+# bounds keep pip on the stable pre-2026-major lines: transformers 4.x, trl 0.x,
+# huggingface_hub 0.x, datasets 3.x. This set resolves on Linux/Python 3.10 to
+# transformers 4.57.6, trl 0.29.1, huggingface_hub 0.36.2, datasets 3.6.0,
+# accelerate 1.15.0, and the full smoke suite passes on it (31/31).
+#
+# torch is deliberately NOT capped: the GPU image ships a CUDA build, and a cap
+# could make pip replace it with a CPU-only or wrong-CUDA wheel.
 #
 # For exact reproducibility, freeze the environment that produced the results
 # and commit it next to them:
@@ -19,20 +27,20 @@
 # --skip-nts) need it. See RUNNING_GUIDE.md.
 
 # --- core: every GPU script (filter, direction, behaviour, controls, D15 experiments)
-torch>=2.2                # bf16 on Ampere/Ada (L40S); install the CUDA build for your driver first
-transformers>=4.51        # Qwen2.5, chat templates, Trainer(processing_class=...); tested up to 5.x
-accelerate>=1.2           # device_map="auto" in common.load_model_and_tokenizer
-huggingface_hub>=0.27     # model/tokenizer download, optional checkpoint push
+torch>=2.10                          # bf16 on Ampere/Ada (L40S); keep the image's CUDA build
+transformers>=5.6.1              # Qwen2.5, chat templates, Trainer(processing_class=...)
+accelerate>=1.2               # device_map="auto" in common.load_model_and_tokenizer
+huggingface_hub>=0.27       # model/tokenizer download, optional checkpoint push
 safetensors>=0.4.5
-numpy>=1.26               # controls.py permutation null, bootstrap summaries
+numpy>=1.26                    # controls.py permutation null, bootstrap summaries
 tqdm>=4.66
 
 # --- analysis and figures (CPU)
-matplotlib>=3.8           # analysis.py, figures_final.py
+matplotlib>=3.8                  # analysis.py, figures_final.py
 
 # --- training chain and science data: train_chain.py (SFT -> Dr.GRPO), science_data.py.
 # M_SFT / M_RL already exist; these are needed to retrain them and for the v1
 # Alpaca download in build_dataset.py --build (v1 profile only).
 datasets>=3.2
-trl>=0.26                 # SFTConfig(completion_only_loss=), GRPOConfig(loss_type="dr_grpo"); env/setup.sh enforces it
+trl>=0.26                    # SFTConfig(completion_only_loss=), GRPOConfig(loss_type="dr_grpo"); env/setup.sh enforces >=0.26
 bitsandbytes>=0.45; platform_system == "Linux"   # optim="adamw_bnb_8bit" (train_chain default)

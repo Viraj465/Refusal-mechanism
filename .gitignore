@@ -1,6 +1,7 @@
 # The prior project, cloned with its own .git. Referenced, never vendored.
 nnsj/
 env/
+
 # Downloaded source datasets — reproducible from build_dataset.py, large.
 refusal/data/_cache/
 

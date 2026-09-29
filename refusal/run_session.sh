@@ -112,9 +112,14 @@ if [[ "$PHASE" == "all" || "$PHASE" == "B" ]]; then
   step v2 rc_M_SFT python refusal/random_control.py --checkpoint "$SFT" --tag M_SFT --donor M0 --m0-condition
   step v2 rc_M_RL  python refusal/random_control.py --checkpoint "$RL"  --tag M_RL  --donor M0 --m0-condition
 
-  step v2 matched_cosine python refusal/matched_cosine.py
-  step v2 e1_M_SFT python refusal/rotation_dose.py --checkpoint "$SFT" --tag M_SFT
-  step v2 e1_M0    python refusal/rotation_dose.py --checkpoint "$M0"  --tag M0
+  # E3/E1 at v2's own selected layer. rotation_dose/matched_cosine default to
+  # --layer 19, which is v1's L*; on v2 M0 selects L27, and the L19 direction
+  # there removes only part of refusal, so an L19 ratio divides by a weak drop.
+  V2_LAYER=$(python -c "import glob,json; f=sorted(glob.glob('refusal/results/v2/direction/direction_fit_M0_*.json'))[-1]; print(json.load(open(f))['selected_layer'])")
+  echo "[v2] E3/E1 at M0's v2 selected layer L$V2_LAYER"
+  step v2 "matched_cosine_L$V2_LAYER" python refusal/matched_cosine.py --layer "$V2_LAYER"
+  step v2 "e1_M_SFT_L$V2_LAYER" python refusal/rotation_dose.py --checkpoint "$SFT" --tag M_SFT --layer "$V2_LAYER"
+  step v2 "e1_M0_L$V2_LAYER"    python refusal/rotation_dose.py --checkpoint "$M0"  --tag M0    --layer "$V2_LAYER"
 fi
 
 echo; echo "=== finished phase $PHASE in $(( ($(date +%s) - T0) / 60 )) min. Log: $LOG ==="

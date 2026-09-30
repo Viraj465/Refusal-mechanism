@@ -1,0 +1,44 @@
+NVIDIA L40S, 46068 MiB
+[skip] v1/smoke (done)
+[keep] refusal/results/v2/directions/M0.pt exists — using it, not refitting
+[keep] refusal/results/v2/directions/M_SFT.pt exists — using it, not refitting
+[keep] refusal/results/v2/directions/M_RL.pt exists — using it, not refitting
+[skip] v2/ceiling_M0 (done)
+[skip] v2/beh_M0 (done)
+[skip] v2/beh_M_SFT (done)
+[skip] v2/beh_M_RL (done)
+[skip] v2/eval_M0 (done)
+[skip] v2/eval_M_SFT (done)
+[skip] v2/eval_M_RL (done)
+[skip] v2/evalc_M_SFT (done)
+[skip] v2/evalc_M_RL (done)
+[skip] v2/rc_M0 (done)
+[skip] v2/rc_M_SFT (done)
+[skip] v2/rc_M_RL (done)
+[v2] E3/E1 at M0's v2 selected layer L27
+
+=== [v2] matched_cosine_L27  (elapsed 0 min) ===
++ python refusal/matched_cosine.py --layer 27
+[matched] M0.pt: selected layer 27
+[matched] M_RL.pt: selected layer 25
+[matched] M_SFT.pt: selected layer 27
+  cos(M0|M_RL) @L27 = +0.9673 (14.7 deg) [degraded]
+  cos(M0|M_SFT) @L27 = +0.9681 (14.5 deg) [degraded]
+  cos(M_RL|M_SFT) @L27 = +0.9972 (4.3 deg) [preserved]
+  angle(M0,M_RL) 14.7 deg, triangle bound [10.2, 18.8]
+  RL continued SFT's rotation axis? cos(perp_SFT, perp_RL) = +0.956
+[results] wrote /teamspace/studios/this_studio/Refusal-Mechanism/refusal/results/v2/direction/matched_cosine_20260930T041237Z.json
+
+=== [v2] e1_M_SFT_L27  (elapsed 0 min) ===
++ python refusal/rotation_dose.py --checkpoint refusal/results/checkpoints/M_SFT --tag M_SFT --layer 27
+[rotation] real axis M_SFT->M0 @L27: c_obs = 0.9681
+[rotation] M_SFT: 200 harmful prompts from 'test', 56 conditions, cosines [1.0, 0.9681, 0.95, 0.9, 0.85, 0.8, 0.7, 0.6, 0.5, 0.3]
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/Refusal-Mechanism/refusal/rotation_dose.py", line 274, in <module>
+    main()
+  File "/teamspace/studios/this_studio/Refusal-Mechanism/refusal/rotation_dose.py", line 251, in main
+    model, tokenizer = load_model_and_tokenizer(args.checkpoint)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/teamspace/studios/this_studio/Refusal-Mechanism/refusal/common.py", line 243, in load_model_and_tokenizer
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+ModuleNotFoundError: No module named 'transformers'

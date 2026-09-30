@@ -38,8 +38,9 @@ cd /teamspace/studios/this_studio/Refusal-Mechanism
 git pull origin main
 
 # The done-markers must still be here, or everything reruns.
-ls refusal/results/.session_done/ | wc -l                       # ~45
+ls refusal/results/.session_done/ | wc -l                       # 39 = the full previous run
 ls refusal/results/.session_done/ | grep -E "v2_(e1|matched)"   # old names only, no *_L27
+grep -c V2_LAYER refusal/run_session.sh                         # 5 = the fix is pulled; 0 = do step 0 first
 
 tmux new -s run
 bash refusal/run_session.sh B
@@ -68,30 +69,11 @@ This tests whether that is just larger activations at L19. **If the M_SFT/M0 rat
 `mean ||h||` is ≈ 1.2, scale explains E2a; if it is ≈ 1.0, it doesn't.**
 
 ```bash
-export REFUSAL_DATA_PROFILE=v1
-python - <<'PY' 2>&1 | tee refusal/results/sensitivity/activation_scale_check.txt
-import gc, sys, torch
-sys.path[:0] = ["refusal", "refusal/data"]
-from common import load_model_and_tokenizer
-from build_dataset import load_pairs
-from direction import last_token_residuals, load_directions
-
-L = 19
-chats = [p["harmless_chat"] for p in load_pairs("test")[:200]]
-u = load_directions("M0")["unit"][L].float()
-for tag, ckpt in [("M0", "Qwen/Qwen2.5-3B-Instruct"),
-                  ("M_SFT", "refusal/results/checkpoints/M_SFT"),
-                  ("M_RL", "refusal/results/checkpoints/M_RL")]:
-    raw = load_directions(tag)["raw"][L].float()
-    model, tok = load_model_and_tokenizer(ckpt)
-    h = last_token_residuals(model, tok, chats, 16)[L]          # [n, d_model], harmless, L19
-    print(f"{tag:6s} mean ||h||@L{L} = {h.norm(dim=-1).mean():8.3f}   "
-          f"own diff-in-means norm = {raw.norm():7.3f}   "
-          f"mean proj on dir_M0 = {(h @ u).mean():+8.3f}")
-    del model; gc.collect(); torch.cuda.empty_cache()
-PY
-unset REFUSAL_DATA_PROFILE
+python refusal/activation_scale_check.py     # always uses v1; no env variable needed
 ```
+
+Prints a table (with each checkpoint's ratio to M0) and saves
+`refusal/results/sensitivity/activation_scale_*.json`.
 
 ## 3. E2b for M_RL at its own selected layer, L21 (Studio, ~20 min)
 

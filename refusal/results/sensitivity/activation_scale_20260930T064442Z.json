@@ -1,0 +1,28 @@
+{
+  "layer": 19,
+  "n_prompts": 200,
+  "rows": {
+    "M0": {
+      "mean_resid_norm": 61.395469665527344,
+      "own_diff_in_means_norm": 15.501916885375977,
+      "mean_proj_on_dir_M0": 20.179203033447266,
+      "resid_norm_vs_M0": 1.0,
+      "own_norm_vs_M0": 1.0
+    },
+    "M_SFT": {
+      "mean_resid_norm": 63.4899787902832,
+      "own_diff_in_means_norm": 13.80690860748291,
+      "mean_proj_on_dir_M0": 18.562044143676758,
+      "resid_norm_vs_M0": 1.0341150436044615,
+      "own_norm_vs_M0": 0.8906581495420038
+    },
+    "M_RL": {
+      "mean_resid_norm": 64.10469055175781,
+      "own_diff_in_means_norm": 13.141328811645508,
+      "mean_proj_on_dir_M0": 18.987106323242188,
+      "resid_norm_vs_M0": 1.0441273745602055,
+      "own_norm_vs_M0": 0.8477228273648291
+    }
+  },
+  "_written_utc": "20260930T064442Z"
+}

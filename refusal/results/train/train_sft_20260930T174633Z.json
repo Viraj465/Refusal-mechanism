@@ -1,0 +1,12 @@
+{
+  "stage": "sft",
+  "init": "Qwen/Qwen2.5-3B-Instruct",
+  "out": "/teamspace/studios/this_studio/Refusal-Mechanism/refusal/results/checkpoints/M_SFT_seed1",
+  "lr": 3e-05,
+  "epochs": 2,
+  "effective_batch": 32,
+  "n_train": 2200,
+  "science_nts": 81.0,
+  "seed": 1,
+  "_written_utc": "20260930T174633Z"
+}

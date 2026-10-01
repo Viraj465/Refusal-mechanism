@@ -1,0 +1,204 @@
+{
+  "tag": "M_SFT_see1",
+  "checkpoint": "refusal/results/checkpoints/M_SFT_seed1",
+  "mode": "fit",
+  "seed": 0,
+  "ablate_from_layer": "all",
+  "direction_meta": {
+    "norms": [
+      0.0,
+      0.6867268085479736,
+      0.9526757597923279,
+      1.1653470993041992,
+      1.8810076713562012,
+      2.4673984050750732,
+      2.5864555835723877,
+      3.3942294120788574,
+      4.032617568969727,
+      6.465239524841309,
+      6.277368545532227,
+      6.059371471405029,
+      5.8651227951049805,
+      5.902590751647949,
+      6.079001426696777,
+      6.210231304168701,
+      6.39978551864624,
+      8.080673217773438,
+      9.37967300415039,
+      14.729348182678223,
+      14.104870796203613,
+      21.29048728942871,
+      22.674209594726562,
+      26.689050674438477,
+      31.702899932861328,
+      38.07600784301758,
+      42.9954833984375,
+      45.288475036621094,
+      51.914344787597656,
+      61.44855880737305,
+      71.98453521728516,
+      91.17562866210938,
+      111.80792999267578,
+      134.7506103515625,
+      140.51254272460938,
+      153.1162567138672,
+      98.1681900024414
+    ],
+    "separation": [
+      0.0,
+      3.430694818496704,
+      3.465839147567749,
+      3.6429576873779297,
+      2.412000894546509,
+      2.6863224506378174,
+      2.865351915359497,
+      3.367417573928833,
+      3.729806661605835,
+      3.9090139865875244,
+      4.076410293579102,
+      4.207913875579834,
+      4.2040886878967285,
+      3.9165282249450684,
+      3.7504944801330566,
+      3.69051194190979,
+      3.6580066680908203,
+      2.8336660861968994,
+      2.791361093521118,
+      4.085111618041992,
+      4.115419864654541,
+      4.55090856552124,
+      5.112280368804932,
+      5.178706169128418,
+      5.522959232330322,
+      6.466423988342285,
+      6.636875629425049,
+      7.335348606109619,
+      7.808313846588135,
+      8.130268096923828,
+      8.1867036819458,
+      8.4135160446167,
+      8.499756813049316,
+      8.029093742370605,
+      8.131387710571289,
+      8.205231666564941,
+      5.946425437927246
+    ],
+    "layer_of_max_separation": 32,
+    "n_pairs": 200
+  },
+  "val_baseline": {
+    "refusal_rate_harmful": {
+      "point": 1.0,
+      "low": 0.8928172849426366,
+      "high": 1.0,
+      "n": 32
+    },
+    "over_refusal_rate_harmless": {
+      "point": 0.0,
+      "low": 0.0,
+      "high": 0.1071827150573635,
+      "n": 32
+    },
+    "compliance_rate_harmless": {
+      "point": 1.0,
+      "low": 0.8928172849426365,
+      "high": 1.0,
+      "n": 32
+    }
+  },
+  "selected_layer": 19,
+  "selection_trace": [
+    {
+      "layer": 7,
+      "refusal_rate_harmful": 0.96875,
+      "compliance_rate_harmless": 1.0,
+      "refusal_drop": 0.03125,
+      "viable": true
+    },
+    {
+      "layer": 9,
+      "refusal_rate_harmful": 0.96875,
+      "compliance_rate_harmless": 1.0,
+      "refusal_drop": 0.03125,
+      "viable": true
+    },
+    {
+      "layer": 11,
+      "refusal_rate_harmful": 0.96875,
+      "compliance_rate_harmless": 1.0,
+      "refusal_drop": 0.03125,
+      "viable": true
+    },
+    {
+      "layer": 13,
+      "refusal_rate_harmful": 0.96875,
+      "compliance_rate_harmless": 0.96875,
+      "refusal_drop": 0.03125,
+      "viable": true
+    },
+    {
+      "layer": 15,
+      "refusal_rate_harmful": 0.90625,
+      "compliance_rate_harmless": 1.0,
+      "refusal_drop": 0.09375,
+      "viable": true
+    },
+    {
+      "layer": 17,
+      "refusal_rate_harmful": 0.75,
+      "compliance_rate_harmless": 0.96875,
+      "refusal_drop": 0.25,
+      "viable": true
+    },
+    {
+      "layer": 19,
+      "refusal_rate_harmful": 0.0,
+      "compliance_rate_harmless": 1.0,
+      "refusal_drop": 1.0,
+      "viable": true
+    },
+    {
+      "layer": 21,
+      "refusal_rate_harmful": 0.0,
+      "compliance_rate_harmless": 1.0,
+      "refusal_drop": 1.0,
+      "viable": true
+    },
+    {
+      "layer": 23,
+      "refusal_rate_harmful": 0.0,
+      "compliance_rate_harmless": 1.0,
+      "refusal_drop": 1.0,
+      "viable": true
+    },
+    {
+      "layer": 25,
+      "refusal_rate_harmful": 0.0,
+      "compliance_rate_harmless": 1.0,
+      "refusal_drop": 1.0,
+      "viable": true
+    },
+    {
+      "layer": 27,
+      "refusal_rate_harmful": 0.0,
+      "compliance_rate_harmless": 1.0,
+      "refusal_drop": 1.0,
+      "viable": true
+    },
+    {
+      "layer": 29,
+      "refusal_rate_harmful": 0.0,
+      "compliance_rate_harmless": 1.0,
+      "refusal_drop": 1.0,
+      "viable": true
+    },
+    {
+      "layer": 31,
+      "refusal_rate_harmful": 0.0,
+      "compliance_rate_harmless": 1.0,
+      "refusal_drop": 1.0,
+      "viable": true
+    }
+  ],
+  "_written_utc": "20261001T043730Z"
+}
